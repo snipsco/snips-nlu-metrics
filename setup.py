@@ -30,6 +30,5 @@ setup(name=PACKAGE_NAME,
               VERSION,
               "tests/resources/*"
           ]},
-      entry_points={},
       include_package_data=True,
       zip_safe=False)
