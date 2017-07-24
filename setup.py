@@ -16,6 +16,8 @@ with io.open(os.path.join(PACKAGE_PATH, VERSION)) as f:
 required = [
     "pytest",
     "mock==2.0.0",
+    "snips_nlu==0.8.13",
+    "snips_nlu_rust==0.21.0.dev1500380441"
 ]
 
 setup(name=PACKAGE_NAME,

@@ -3,14 +3,15 @@ from __future__ import unicode_literals
 import io
 import json
 import os
+import shutil
 import zipfile
 from tempfile import mkdtemp
 
-import shutil
 from snips_nlu.nlu_engine import SnipsNLUEngine
 from snips_nlu_rust import NLUEngine as RustNLUEngine
 
 from nlu_metrics.utils.dependency_utils import update_nlu_packages
+from nlu_metrics.utils.metrics_utils import create_k_fold_batches
 
 TRAINED_ENGINE_FILENAME = "trained_assistant.json"
 
@@ -23,8 +24,10 @@ def compute_metrics(language, dataset, snips_nlu_version,
     update_nlu_packages(snips_nlu_version=snips_nlu_version,
                         snips_nlu_rust_version=snips_nlu_rust_version)
 
-    engine = get_trained_nlu_engine(language, dataset)
-    pass
+    batches = create_k_fold_batches(dataset, k=5)
+
+    for (train_dataset, test_utterances) in batches:
+        engine = get_trained_nlu_engine(language, train_dataset)
 
 
 def get_trained_nlu_engine(language, dataset):
