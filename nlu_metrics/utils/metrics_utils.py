@@ -2,9 +2,8 @@ from __future__ import unicode_literals
 
 from copy import deepcopy
 
-from snips_nlu.constants import INTENTS, UTTERANCES, ENGINE_TYPE, \
-    CUSTOM_ENGINE, DATA, SLOT_NAME, PARSED_INTENT, INTENT_NAME, PARSED_SLOTS, \
-    MATCH_RANGE, TEXT
+from snips_nlu.constants import (INTENTS, UTTERANCES, ENGINE_TYPE,
+                                 CUSTOM_ENGINE, DATA, SLOT_NAME, TEXT)
 
 from nlu_metrics.utils.dataset_utils import input_string_from_chunks
 
@@ -50,7 +49,8 @@ def compute_engine_metrics(engine, test_utterances):
         parsing = engine.parse(input_string)
         utterance_metrics = compute_utterance_metrics(parsing, utterance,
                                                       intent_name)
-        metrics = update_metrics(metrics, utterance_metrics)
+        metrics = aggregate_metrics(metrics, utterance_metrics)
+    return metrics
 
 
 def compute_utterance_metrics(parsing, utterance, utterance_intent):
@@ -71,9 +71,6 @@ def compute_utterance_metrics(parsing, utterance, utterance_intent):
     intent_names = {parsing_intent_name, utterance_intent}
     slot_names = set([s["slotName"] for s in parsed_slots] +
                      [u[SLOT_NAME] for u in utterance_slots])
-
-    # precision = true_positive / (true_positive + false_positive)
-    # recall = true_positive / (true_positive + false_negative)
 
     initial_metrics = {
         "true_positive": 0,
@@ -111,26 +108,37 @@ def compute_utterance_metrics(parsing, utterance, utterance_intent):
     return metrics
 
 
-def update_metrics(dataset_metrics, utterance_metrics):
-    for (intent, intent_metrics) in utterance_metrics["intents"].iteritems():
-        if intent not in dataset_metrics["intents"]:
-            dataset_metrics["intents"][intent] = deepcopy(intent_metrics)
+def aggregate_metrics(lhs_metrics, rhs_metrics):
+    aggregated_metrics = deepcopy(lhs_metrics)
+    for (intent, intent_metrics) in rhs_metrics["intents"].iteritems():
+        if intent not in aggregated_metrics["intents"]:
+            aggregated_metrics["intents"][intent] = deepcopy(intent_metrics)
         else:
-            dataset_metrics["intents"][intent] = add_metrics(
-                dataset_metrics["intents"][intent], intent_metrics)
+            aggregated_metrics["intents"][intent] = add_count_metrics(
+                aggregated_metrics["intents"][intent], intent_metrics)
 
-    for (slot_name, slot_metrics) in utterance_metrics["slots"].iteritems():
-        if slot_name not in dataset_metrics["slots"]:
-            dataset_metrics["slots"][slot_name] = deepcopy(slot_metrics)
+    for (slot_name, slot_metrics) in rhs_metrics["slots"].iteritems():
+        if slot_name not in aggregated_metrics["slots"]:
+            aggregated_metrics["slots"][slot_name] = deepcopy(slot_metrics)
         else:
-            dataset_metrics["slots"][slot_name] = add_metrics(
-                dataset_metrics["slots"][slot_name], slot_metrics)
-    return dataset_metrics
+            aggregated_metrics["slots"][slot_name] = add_count_metrics(
+                aggregated_metrics["slots"][slot_name], slot_metrics)
+    return aggregated_metrics
 
 
-def add_metrics(lhs, rhs):
+def add_count_metrics(lhs, rhs):
     return {
         "true_positive": lhs["true_positive"] + rhs["true_positive"],
         "false_positive": lhs["false_positive"] + rhs["false_positive"],
         "false_negative": lhs["false_negative"] + rhs["false_negative"],
+    }
+
+
+def compute_precision_recall(count_metrics):
+    tp = count_metrics["true_positive"]
+    fp = count_metrics["false_positive"]
+    fn = count_metrics["false_negative"]
+    return {
+        "precision": 0. if tp == 0 else float(tp) / float(tp + fp),
+        "recall": 0. if tp == 0 else float(tp) / float(tp + fn),
     }
