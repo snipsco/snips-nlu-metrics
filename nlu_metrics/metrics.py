@@ -18,7 +18,7 @@ def compute_metrics(language, dataset, snips_nlu_version,
                         snips_nlu_rust_version=snips_nlu_rust_version)
 
     batches = create_k_fold_batches(dataset, k=k_fold_size,
-                                    nb_utterances=max_utterances)
+                                    max_training_utterances=max_utterances)
 
     global_metrics = {
         "intents": dict(),

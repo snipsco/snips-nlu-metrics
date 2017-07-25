@@ -4,8 +4,8 @@ import unittest
 
 from snips_nlu.constants import DATA, TEXT
 
-from nlu_metrics.utils.metrics_utils import aggregate_metrics, \
-    compute_utterance_metrics
+from nlu_metrics.utils.metrics_utils import (aggregate_metrics,
+                                             compute_utterance_metrics)
 
 
 class TestMetricsUtils(unittest.TestCase):

@@ -1,15 +1,15 @@
 from __future__ import unicode_literals
 
 from snips_nlu.constants import TEXT, INTENTS, UTTERANCES
-from random import shuffle
+import random
 
 
 def input_string_from_chunks(chunks):
     return "".join(chunk[TEXT] for chunk in chunks)
 
 
-def get_stratified_utterances(dataset):
-    shuffle_dataset(dataset)
+def get_stratified_utterances(dataset, seed):
+    shuffle_dataset(dataset, seed)
     utterances = [
         (intent_name, utterance, i)
         for intent_name, intent_data in dataset[INTENTS].iteritems()
@@ -21,6 +21,7 @@ def get_stratified_utterances(dataset):
     return utterances
 
 
-def shuffle_dataset(dataset):
+def shuffle_dataset(dataset, seed):
+    random.seed(seed)
     for intent_data in dataset[INTENTS].values():
-        shuffle(intent_data[UTTERANCES])
+        random.shuffle(intent_data[UTTERANCES])

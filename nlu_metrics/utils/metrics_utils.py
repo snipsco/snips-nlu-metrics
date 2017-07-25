@@ -9,18 +9,17 @@ from nlu_metrics.utils.dataset_utils import (input_string_from_chunks,
                                              get_stratified_utterances)
 
 
-def create_k_fold_batches(dataset, k, nb_utterances=None):
-    utterances = get_stratified_utterances(dataset)
-    if nb_utterances is None:
-        nb_utterances = len(utterances)
-    else:
-        nb_utterances = min(len(utterances), nb_utterances)
+def create_k_fold_batches(dataset, k, max_training_utterances=None, seed=None):
+    utterances = get_stratified_utterances(dataset, seed)
+    if max_training_utterances is None:
+        max_training_utterances = len(utterances)
     k_fold_batches = []
-    batch_size = nb_utterances / k
+    batch_size = len(utterances) / k
     for batch_index in xrange(k):
         test_start = batch_index * batch_size
         test_end = (batch_index + 1) * batch_size
         train_utterances = utterances[0:test_start] + utterances[test_end:]
+        train_utterances = train_utterances[0:max_training_utterances]
         test_utterances = utterances[test_start: test_end]
         train_dataset = deepcopy(dataset)
         train_dataset[INTENTS] = dict()
