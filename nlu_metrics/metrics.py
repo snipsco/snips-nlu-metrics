@@ -1,8 +1,5 @@
 from __future__ import unicode_literals
 
-import io
-import json
-
 from nlu_metrics.utils.dependency_utils import update_nlu_packages
 from nlu_metrics.utils.metrics_utils import (create_k_fold_batches,
                                              compute_engine_metrics,
