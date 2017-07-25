@@ -5,19 +5,16 @@ from copy import deepcopy
 from snips_nlu.constants import (INTENTS, UTTERANCES, ENGINE_TYPE,
                                  CUSTOM_ENGINE, DATA, SLOT_NAME, TEXT)
 
-from nlu_metrics.utils.dataset_utils import input_string_from_chunks
+from nlu_metrics.utils.dataset_utils import (input_string_from_chunks,
+                                             get_stratified_utterances)
 
 
-def create_k_fold_batches(dataset, k):
-    utterances = [
-        (intent_name, utterance, i)
-        for intent_name, intent_data in dataset[INTENTS].iteritems()
-        for i, utterance in enumerate(intent_data[UTTERANCES])
-    ]
-    utterances = sorted(utterances, key=lambda u: u[2])
-    utterances = [(intent_name, utterance) for (intent_name, utterance, _) in
-                  utterances]
-    nb_utterances = len(utterances)
+def create_k_fold_batches(dataset, k, nb_utterances=None):
+    utterances = get_stratified_utterances(dataset)
+    if nb_utterances is None:
+        nb_utterances = len(utterances)
+    else:
+        nb_utterances = min(len(utterances), nb_utterances)
     k_fold_batches = []
     batch_size = nb_utterances / k
     for batch_index in xrange(k):

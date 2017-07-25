@@ -9,14 +9,16 @@ from nlu_metrics.utils.nlu_engine_utils import get_trained_nlu_engine
 
 
 def compute_metrics(language, dataset, snips_nlu_version,
-                    snips_nlu_rust_version):
+                    snips_nlu_rust_version, k_fold_size=5,
+                    max_utterances=None):
     """
-    Compute the main NLU metrics on the provided dataset and return a dict
+    Compute the main NLU metrics on the provided dataset
     """
     update_nlu_packages(snips_nlu_version=snips_nlu_version,
                         snips_nlu_rust_version=snips_nlu_rust_version)
 
-    batches = create_k_fold_batches(dataset, k=5)
+    batches = create_k_fold_batches(dataset, k=k_fold_size,
+                                    nb_utterances=max_utterances)
 
     global_metrics = {
         "intents": dict(),
@@ -24,7 +26,6 @@ def compute_metrics(language, dataset, snips_nlu_version,
     }
 
     for batch_index, (train_dataset, test_utterances) in enumerate(batches):
-        print("Processing batch %s" % batch_index)
         engine = get_trained_nlu_engine(language, train_dataset)
         batch_metrics = compute_engine_metrics(engine, test_utterances)
         global_metrics = aggregate_metrics(global_metrics, batch_metrics)
