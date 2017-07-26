@@ -11,8 +11,16 @@ from nlu_metrics.utils.nlu_engine_utils import get_trained_nlu_engine
 def compute_metrics(language, dataset, snips_nlu_version,
                     snips_nlu_rust_version, k_fold_size=5,
                     max_utterances=None):
-    """
-    Compute the main NLU metrics on the provided dataset
+    """Compute the main NLU metrics on the provided dataset
+
+    :param language: str
+    :param dataset: dict
+    :param snips_nlu_version: str, semver
+    :param snips_nlu_rust_version: str, semver
+    :param k_fold_size: int, number of folds to use for cross validation
+    :param max_utterances: int, max number of utterances to use for training
+    :return: dict containing the metrics
+
     """
     update_nlu_packages(snips_nlu_version=snips_nlu_version,
                         snips_nlu_rust_version=snips_nlu_rust_version)
