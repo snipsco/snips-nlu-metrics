@@ -14,7 +14,6 @@ with io.open(os.path.join(PACKAGE_PATH, VERSION)) as f:
     version = f.readline().strip()
 
 required = [
-    "pytest",
     "mock==2.0.0",
 ]
 
@@ -28,7 +27,6 @@ setup(name=PACKAGE_NAME,
       package_data={
           "": [
               VERSION,
-              "tests/resources/*"
           ]},
       include_package_data=True,
       zip_safe=False)
