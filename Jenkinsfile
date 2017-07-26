@@ -21,7 +21,6 @@ node('jenkins-slave-ec2') {
     	${VENV}
     	echo "[global]\nindex = https://${credentials}@nexus-repository.snips.ai/repository/pypi-internal/pypi\nindex-url = https://pypi.python.org/simple/\nextra-index-url = https://${credentials}@nexus-repository.snips.ai/repository/pypi-internal/simple" >> venv/pip.conf
     	pip install .
-        git submodule update --init
     	"""
     }
 
