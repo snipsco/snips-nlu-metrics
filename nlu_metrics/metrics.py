@@ -16,8 +16,8 @@ def compute_cross_val_metrics(language, dataset, snips_nlu_version,
 
     :param language: str
     :param dataset: dict
-    :param snips_nlu_version: str, semver
-    :param snips_nlu_rust_version: str, semver
+    :param snips_nlu_version: optional str, semver, None --> use local version
+    :param snips_nlu_rust_version: str, semver, None --> use local version
     :param k_fold_size: int, number of folds to use for cross validation
     :param max_utterances: int, max number of utterances to use for training
     :return: dict containing the metrics
@@ -52,8 +52,8 @@ def compute_train_test_metrics(language, train_dataset, test_dataset,
     :param language: str
     :param train_dataset: dict, dataset used for training
     :param test_dataset: dict, dataset used for testing
-    :param snips_nlu_version: str, semver
-    :param snips_nlu_rust_version: str, semver
+    :param snips_nlu_version: str, semver, None --> use local version
+    :param snips_nlu_rust_version: str, semver, None --> use local version
     :return: dict containing the metrics
     """
     update_nlu_packages(snips_nlu_version=snips_nlu_version,
