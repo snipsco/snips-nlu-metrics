@@ -13,18 +13,20 @@ VERSION = "__version__"
 with io.open(os.path.join(PACKAGE_PATH, VERSION)) as f:
     version = f.readline().strip()
 
-required = [
-    "mock==2.0.0",
-    "snips_nlu==0.8.14",
-    "snips_nlu_rust==0.21.1"
-]
+extras_require = {
+    "test": [
+        "mock==2.0.0",
+        "snips_nlu==0.8.14",
+        "snips_nlu_rust==0.21.1"
+    ]
+}
 
 setup(name=PACKAGE_NAME,
       version=version,
       author="Adrien Ball",
       author_email="adrien.ball@snips.ai",
       license="All rights reserved",
-      install_requires=required,
+      extras_require=extras_require,
       packages=packages,
       package_data={
           "": [
