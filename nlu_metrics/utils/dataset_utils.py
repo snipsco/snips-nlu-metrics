@@ -26,3 +26,16 @@ def shuffle_dataset(dataset, seed):
     random.seed(seed)
     for intent_data in dataset[INTENTS].values():
         random.shuffle(intent_data[UTTERANCES])
+
+
+def format_registry_dataset(registry_dataset, intent_name, language):
+    registry_dataset['language'] = language
+    registry_dataset['intents'] = {
+        intent_name: {
+            'engineType': 'regex',
+            'utterances': registry_dataset['utterances']
+        }
+    }
+
+    registry_dataset.pop('utterances')
+    return registry_dataset

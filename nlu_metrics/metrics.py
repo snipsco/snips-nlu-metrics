@@ -1,12 +1,19 @@
 from __future__ import unicode_literals
 
-from nlu_metrics.utils.dataset_utils import get_stratified_utterances
+import io
+import json
+import time
+import os
+
+from nlu_metrics.utils.dataset_utils import (get_stratified_utterances,
+                                             format_registry_dataset)
 from nlu_metrics.utils.dependency_utils import update_nlu_packages
 from nlu_metrics.utils.metrics_utils import (create_k_fold_batches,
                                              compute_engine_metrics,
                                              aggregate_metrics,
                                              compute_precision_recall)
 from nlu_metrics.utils.nlu_engine_utils import get_trained_nlu_engine
+from nlu_metrics.utils.registry_utils import get_intents
 
 
 def compute_cross_val_metrics(language, dataset, snips_nlu_version,
@@ -61,3 +68,64 @@ def compute_train_test_metrics(language, train_dataset, test_dataset,
     metrics = compute_engine_metrics(engine, utterances)
     metrics = compute_precision_recall(metrics)
     return metrics
+
+
+def compute_batch_metrics(metrics_config):
+    timestamp = time.time()
+    grid = metrics_config["grid"]
+    snips_nlu_version = metrics_config["snips_nlu_version"]
+    snips_nlu_rust_version = metrics_config["snips_nlu_rust_version"]
+
+    print("Fetching intents on %s" % grid)
+    intents = get_intents(
+        grid=grid,
+        email=metrics_config["email_author"],
+        language=metrics_config.get("language", None),
+        version=metrics_config["version"],
+        intent_name=metrics_config.get("intent_name", None),
+        persisting_dir_path=metrics_config.get("intents_data_dir", None),
+        force_fetch=metrics_config["force_fetch"])
+    print("%s intents fetched" % len(intents))
+
+    for intent in intents:
+        language = intent["config"]["language"]
+        intent_name = intent["config"]["name"]
+
+        print("Computing metrics for intent '%s' in language '%s'"
+              % (intent_name, language))
+
+        nb_utterances = len(intent["customIntentData"]["utterances"])
+        if nb_utterances < min(metrics_config["k_fold_sizes"]):
+            print("Skipping intent because number of utterances is too "
+                  "low (%s)" % nb_utterances)
+            continue
+        dataset = format_registry_dataset(intent["customIntentData"],
+                                          intent_name, language)
+
+        for max_utterances in metrics_config["max_utterances"]:
+            print("\tmax utterances: %d" % max_utterances)
+            for k_fold_size in metrics_config["k_fold_sizes"]:
+                print("\t\tk_fold_size: %d" % k_fold_size)
+                metrics = compute_cross_val_metrics(
+                    language, dataset,
+                    snips_nlu_version=snips_nlu_version,
+                    snips_nlu_rust_version=snips_nlu_rust_version,
+                    k_fold_size=k_fold_size,
+                    max_utterances=max_utterances)
+                save_metrics(metrics, language, intent_name, intent_name,
+                             max_utterances, k_fold_size,
+                             metrics_config["metrics_dir"], timestamp)
+
+
+def save_metrics(metrics, language, intent_group, intent_name, max_utterances,
+                 k_fold_size, metrics_dir, timestamp):
+    metrics_path = os.path.join(
+        metrics_dir, language, intent_group, intent_name,
+        "max_utterances_%s" % max_utterances,
+        "k_fold_size_%s" % k_fold_size, "%d.json" % timestamp)
+
+    directory = os.path.dirname(metrics_path)
+    if not os.path.isdir(directory):
+        os.makedirs(directory)
+    with io.open(metrics_path, mode='w', encoding="utf8") as f:
+        f.write(json.dumps(metrics, indent=4).decode(encoding="utf8"))

@@ -13,6 +13,10 @@ VERSION = "__version__"
 with io.open(os.path.join(PACKAGE_PATH, VERSION)) as f:
     version = f.readline().strip()
 
+install_requires = [
+    "requests"
+]
+
 extras_require = {
     "test": [
         "mock==2.0.0",
@@ -27,6 +31,7 @@ setup(name=PACKAGE_NAME,
       author_email="adrien.ball@snips.ai",
       license="All rights reserved",
       extras_require=extras_require,
+      install_requires=install_requires,
       packages=packages,
       package_data={
           "": [
