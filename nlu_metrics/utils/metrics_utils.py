@@ -11,6 +11,10 @@ from nlu_metrics.utils.dataset_utils import (input_string_from_chunks,
 
 def create_k_fold_batches(dataset, k, max_training_utterances=None, seed=None):
     utterances = get_stratified_utterances(dataset, seed)
+    if len(utterances) < k:
+        raise AssertionError("The number of utterances ({0}) should be "
+                             "greater than the fold size ({1}) in order to "
+                             "compute metrics".format(len(utterances), k))
     if max_training_utterances is None:
         max_training_utterances = len(utterances)
     k_fold_batches = []
@@ -130,7 +134,17 @@ def add_count_metrics(lhs, rhs):
     }
 
 
-def compute_precision_recall(count_metrics):
+def compute_precision_recall(metrics):
+    for intent_metrics in metrics["intents"].values():
+        prec_rec_metrics = _compute_precision_recall(intent_metrics)
+        intent_metrics.update(prec_rec_metrics)
+    for slot_metrics in metrics["slots"].values():
+        prec_rec_metrics = _compute_precision_recall(slot_metrics)
+        slot_metrics.update(prec_rec_metrics)
+    return metrics
+
+
+def _compute_precision_recall(count_metrics):
     tp = count_metrics["true_positive"]
     fp = count_metrics["false_positive"]
     fn = count_metrics["false_negative"]

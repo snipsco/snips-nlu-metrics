@@ -8,8 +8,9 @@ def input_string_from_chunks(chunks):
     return "".join(chunk[TEXT] for chunk in chunks)
 
 
-def get_stratified_utterances(dataset, seed):
-    shuffle_dataset(dataset, seed)
+def get_stratified_utterances(dataset, seed, shuffle=True):
+    if shuffle:
+        shuffle_dataset(dataset, seed)
     utterances = [
         (intent_name, utterance, i)
         for intent_name, intent_data in dataset[INTENTS].iteritems()

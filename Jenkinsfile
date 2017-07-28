@@ -20,7 +20,7 @@ node('jenkins-slave-ec2') {
     	sh """
     	${VENV}
     	echo "[global]\nindex = https://${credentials}@nexus-repository.snips.ai/repository/pypi-internal/pypi\nindex-url = https://pypi.python.org/simple/\nextra-index-url = https://${credentials}@nexus-repository.snips.ai/repository/pypi-internal/simple" >> venv/pip.conf
-    	pip install .
+    	pip install .[test]
     	"""
     }
 
@@ -43,7 +43,6 @@ node('jenkins-slave-ec2') {
                 virtualenv venv
                 ${VENV}
                 echo "[global]\nindex = https://${credentials}@nexus-repository.snips.ai/repository/pypi-internal/pypi\nindex-url = https://pypi.python.org/simple/\nextra-index-url = https://${credentials}@nexus-repository.snips.ai/repository/pypi-internal/simple" >> venv/pip.conf
-                pip install .
                 python setup.py bdist_wheel upload -r pypisnips
                 git tag ${version(path)}
                 git remote rm origin
