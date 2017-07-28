@@ -29,10 +29,7 @@ def compute_cross_val_metrics(language, dataset, snips_nlu_version,
     batches = create_k_fold_batches(dataset, k=k_fold_size,
                                     max_training_utterances=max_utterances)
 
-    global_metrics = {
-        "intents": dict(),
-        "slots": dict()
-    }
+    global_metrics = dict()
 
     for batch_index, (train_dataset, test_utterances) in enumerate(batches):
         engine = get_trained_nlu_engine(language, train_dataset)
