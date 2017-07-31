@@ -28,14 +28,21 @@ def shuffle_dataset(dataset, seed):
         random.shuffle(intent_data[UTTERANCES])
 
 
-def format_registry_dataset(registry_dataset, intent_name, language):
-    registry_dataset['language'] = language
-    registry_dataset['intents'] = {
-        intent_name: {
-            'engineType': 'regex',
-            'utterances': registry_dataset['utterances']
+def create_nlu_dataset(registry_intents):
+    language = registry_intents[0]["config"]["language"]
+    nlu_dataset = {
+        "language": language,
+        "snips_nlu_version": "0.1.0",
+        "intents": {
+            intent["config"]["name"]: {
+                "engineType": "regex",
+                "utterances": intent["customIntentData"]["utterances"]
+            } for intent in registry_intents
+        },
+        "entities": {
+            entity_name: entity
+            for intent in registry_intents for entity_name, entity in
+            intent["customIntentData"]["entities"].iteritems()
         }
     }
-
-    registry_dataset.pop('utterances')
-    return registry_dataset
+    return nlu_dataset

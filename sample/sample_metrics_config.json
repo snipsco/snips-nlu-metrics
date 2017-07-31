@@ -1,0 +1,41 @@
+{
+  "grid": "dev",
+  "languages": [
+    "fr",
+    "en",
+    "es",
+    "ko",
+    "de"
+  ],
+  "max_utterances": [
+    20,
+    50,
+    100,
+    500
+  ],
+  "k_fold_sizes": [
+    5
+  ],
+  "intent_groups": [
+    {
+      "name": "TestBundle",
+      "language": "en",
+      "intents": [
+        "PlayBook",
+        "RepeatIntent"
+      ]
+    }
+  ],
+  "intent_names": [
+    "PlayBook",
+    "SearchVideoCreativeWorkDescription",
+    "RepeatIntent"
+  ],
+  "emails": [
+    "intents@snips.ai"
+  ],
+  "version": "latest",
+  "metrics_dir": "/Users/adrien/dev/nlu-metrics/intents_metrics",
+  "snips_nlu_version": "0.8.14",
+  "snips_nlu_rust_version": "0.21.1"
+}

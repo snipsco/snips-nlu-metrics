@@ -14,14 +14,15 @@ with io.open(os.path.join(PACKAGE_PATH, VERSION)) as f:
     version = f.readline().strip()
 
 install_requires = [
-    "requests"
+    "requests==2.18.2",
+    "pymongo==3.4.0"
 ]
 
 extras_require = {
     "test": [
         "mock==2.0.0",
         "snips_nlu==0.8.14",
-        "snips_nlu_rust==0.21.1"
+        "snips_nlu_rust==0.21.1",
     ]
 }
 
