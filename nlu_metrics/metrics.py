@@ -64,7 +64,7 @@ def compute_train_test_metrics(train_dataset, test_dataset,
     return metrics
 
 
-def run_and_save_registry_metrics(metrics_config, destination):
+def run_and_save_registry_metrics(metrics_config, destination="db"):
     if isinstance(metrics_config, (str, unicode)):
         with io.open(metrics_config, encoding="utf8") as f:
             config = json.load(f)

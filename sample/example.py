@@ -1,9 +1,3 @@
-import io
-import json
+from nlu_metrics.metrics import run_and_save_registry_metrics
 
-from nlu_metrics.metrics import run_registry_metrics
-
-with io.open("sample_metrics_config.json") as f:
-    config = json.load(f)
-
-run_registry_metrics(config)
+run_and_save_registry_metrics("sample_metrics_config.json", destination="json")

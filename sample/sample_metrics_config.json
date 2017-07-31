@@ -8,29 +8,19 @@
     "de"
   ],
   "max_utterances": [
-    20,
+    10,
+    25,
     50,
+    75,
     100,
+    250,
     500
   ],
   "k_fold_sizes": [
     5
   ],
-  "intent_groups": [
-    {
-      "name": "TestBundle",
-      "language": "en",
-      "intents": [
-        "PlayBook",
-        "RepeatIntent"
-      ]
-    }
-  ],
-  "intent_names": [
-    "PlayBook",
-    "SearchVideoCreativeWorkDescription",
-    "RepeatIntent"
-  ],
+  "intent_groups": null,
+  "intent_names": null,
   "emails": [
     "intents@snips.ai"
   ],
