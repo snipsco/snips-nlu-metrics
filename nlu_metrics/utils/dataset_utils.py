@@ -1,7 +1,8 @@
 from __future__ import unicode_literals
 
-from snips_nlu.constants import TEXT, INTENTS, UTTERANCES
 import random
+
+from snips_nlu.constants import TEXT, INTENTS, UTTERANCES
 
 
 def input_string_from_chunks(chunks):

@@ -40,82 +40,96 @@ class TestMetricsUtils(unittest.TestCase):
         metrics = compute_utterance_metrics(parsing, utterance, intent_name)
         # Then
         expected_metrics = {
-            'intents': {
-                'intent1': {
-                    'false_negative': 1,
-                    'false_positive': 0,
-                    'true_positive': 0
+            "intent1": {
+                "intent": {
+                    "false_negative": 1,
+                    "false_positive": 0,
+                    "true_positive": 0
                 },
-                'intent2': {
-                    'false_negative': 0,
-                    'false_positive': 1,
-                    'true_positive': 0
-                }
+                "slots": {}
             },
-            'slots': {
-                'erroneous_slot': {
-                    'false_negative': 0,
-                    'false_positive': 0,
-                    'true_positive': 0
+            "intent2": {
+                "intent": {
+                    "false_negative": 0,
+                    "false_positive": 1,
+                    "true_positive": 0
+                },
+                "slots": {
+                    "erroneous_slot": {
+                        "false_negative": 0,
+                        "false_positive": 0,
+                        "true_positive": 0
+                    }
                 }
             }
         }
+
         self.assertDictEqual(expected_metrics, metrics)
 
     def test_aggregate_utils_should_work(self):
         # Given
         lhs_metrics = {
-            "intents": {
-                "intent1": {
+            "intent1": {
+                "intent": {
                     "false_positive": 4,
                     "true_positive": 6,
                     "false_negative": 9
                 },
-                "intent2": {
+                "slots": {
+                    "slot1": {
+                        "false_positive": 1,
+                        "true_positive": 2,
+                        "false_negative": 3
+                    },
+                },
+            },
+            "intent2": {
+                "intent": {
                     "false_positive": 3,
                     "true_positive": 2,
                     "false_negative": 5
                 },
+                "slots": {
+                    "slot2": {
+                        "false_positive": 4,
+                        "true_positive": 2,
+                        "false_negative": 2
+                    },
+                }
             },
-            "slots": {
-                "slot1": {
-                    "false_positive": 1,
-                    "true_positive": 2,
-                    "false_negative": 3
-                },
-                "slot2": {
-                    "false_positive": 4,
-                    "true_positive": 2,
-                    "false_negative": 2
-                },
-            }
         }
 
         rhs_metrics = {
-            "intents": {
-                "intent1": {
+            "intent1": {
+                "intent": {
                     "false_positive": 3,
                     "true_positive": 3,
                     "false_negative": 3
                 },
-                "intent2": {
+                "slots": {
+                    "slot1": {
+                        "false_positive": 2,
+                        "true_positive": 3,
+                        "false_negative": 1
+                    },
+                }
+            },
+            "intent2": {
+                "intent": {
                     "false_positive": 4,
                     "true_positive": 5,
                     "false_negative": 6
                 },
-                "intent3": {
+                "slots": {}
+            },
+            "intent3": {
+                "intent": {
                     "false_positive": 1,
                     "true_positive": 7,
                     "false_negative": 2
                 },
+                "slots": {}
             },
-            "slots": {
-                "slot1": {
-                    "false_positive": 2,
-                    "true_positive": 3,
-                    "false_negative": 1
-                },
-            }
         }
 
         # When
@@ -123,35 +137,43 @@ class TestMetricsUtils(unittest.TestCase):
 
         # Then
         expected_metrics = {
-            "intents": {
-                "intent1": {
+            "intent1": {
+                "intent": {
                     "false_positive": 7,
                     "true_positive": 9,
-                    "false_negative": 12
+                    "false_negative": 12,
                 },
-                "intent2": {
+                "slots":
+                    {
+                        "slot1": {
+                            "false_positive": 3,
+                            "true_positive": 5,
+                            "false_negative": 4
+                        },
+                    }
+            },
+            "intent2": {
+                "intent": {
                     "false_positive": 7,
                     "true_positive": 7,
-                    "false_negative": 11
+                    "false_negative": 11,
                 },
-                "intent3": {
+                "slots": {
+                    "slot2": {
+                        "false_positive": 4,
+                        "true_positive": 2,
+                        "false_negative": 2
+                    },
+                }
+            },
+            "intent3": {
+                "intent": {
                     "false_positive": 1,
                     "true_positive": 7,
                     "false_negative": 2
                 },
+                "slots": {}
             },
-            "slots": {
-                "slot1": {
-                    "false_positive": 3,
-                    "true_positive": 5,
-                    "false_negative": 4
-                },
-                "slot2": {
-                    "false_positive": 4,
-                    "true_positive": 2,
-                    "false_negative": 2
-                },
-            }
         }
 
         self.assertDictEqual(expected_metrics, aggregated_metrics)
