@@ -24,6 +24,8 @@
   "authors": [
     "intents@snips.ai"
   ],
+  "mongo_host": "localhost",
+  "mongo_port": 27017,
   "version": "latest",
   "snips_nlu_version": "0.8.14",
   "snips_nlu_rust_version": "0.21.1"

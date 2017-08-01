@@ -69,10 +69,10 @@ def create_intent_groups(config_intent_groups, intents):
         group_language = config_group["language"]
         group_intents = []
         for intent_name in config_group["intents"]:
-            matching_intents = filter(
-                lambda intent: intent["config"]["name"] == intent_name and
-                               intent["config"]["language"] == group_language,
-                intents)
+            matching_intents = [
+                intent for intent in intents if
+                intent["config"]["name"] == intent_name and
+                intent["config"]["language"] == group_language]
             if len(matching_intents) == 0:
                 raise AssertionError("Missing entry in the registry for "
                                      "intent '%s' in language '%s'"

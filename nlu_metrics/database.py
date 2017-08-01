@@ -2,17 +2,12 @@ from __future__ import unicode_literals
 
 from copy import deepcopy
 
-from pymongo import MongoClient
 
-client = MongoClient('localhost', 27017)
+def save_metrics_into_db(db, metrics, grid, language, intent_group,
+                         authors, max_utterances, k_fold_size, datetime):
+    slot_metrics_collection = db['slot-metrics']
+    intent_metrics_collection = db['intent-metrics']
 
-db = client['nlu-metrics']
-slot_metrics_collection = db['slot-metrics']
-intent_metrics_collection = db['intent-metrics']
-
-
-def save_metrics_into_db(metrics, grid, language, intent_group, authors,
-                         max_utterances, k_fold_size, datetime):
     base_entry = {
         "grid": grid,
         "language": language,

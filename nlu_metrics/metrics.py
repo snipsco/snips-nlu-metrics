@@ -5,6 +5,8 @@ import datetime
 import io
 import json
 
+from pymongo import MongoClient
+
 from nlu_metrics.database import save_metrics_into_db
 from nlu_metrics.utils.dataset_utils import (get_stratified_utterances,
                                              create_nlu_dataset)
@@ -30,9 +32,9 @@ def compute_cross_val_metrics(dataset, snips_nlu_version,
     :return: dict containing the metrics
 
     """
-    nb_utterances = sum(len(intent["utterances"])
-                        for intent in dataset["intents"].values())
-    if nb_utterances < k_fold_size:
+    nb_utterances = {intent: len(data["utterances"])
+                     for intent, data in dataset["intents"].iteritems()}
+    if sum(nb_utterances.values()) < k_fold_size:
         print("Skipping group because number of utterances is too "
               "low (%s)" % nb_utterances)
         return None
@@ -52,11 +54,7 @@ def compute_cross_val_metrics(dataset, snips_nlu_version,
     global_metrics = compute_precision_recall(global_metrics)
 
     for intent, metrics in global_metrics.iteritems():
-        if intent is None:
-            metrics["intent_utterances"] = 0
-        else:
-            metrics["intent_utterances"] = len(
-                dataset["intents"][intent]["utterances"])
+        metrics["intent_utterances"] = nb_utterances.get(intent, 0)
 
     return global_metrics
 
@@ -82,26 +80,25 @@ def compute_train_test_metrics(train_dataset, test_dataset,
     return metrics
 
 
-def run_and_save_registry_metrics(metrics_config):
-    if isinstance(metrics_config, (str, unicode)):
-        with io.open(metrics_config, encoding="utf8") as f:
-            config = json.load(f)
-    else:
-        config = metrics_config
+def run_and_save_registry_metrics(grid,
+                                  snips_nlu_version,
+                                  snips_nlu_rust_version,
+                                  authors,
+                                  k_fold_sizes,
+                                  max_utterances,
+                                  languages=None,
+                                  version="latest",
+                                  intent_names=None,
+                                  intent_groups=None,
+                                  mongo_host="localhost",
+                                  mongo_port=27017):
+    mongo_client = MongoClient(mongo_host, mongo_port)
+    db = mongo_client['nlu-metrics']
     timestamp = datetime.datetime.utcnow()
-    grid = config["grid"]
-    snips_nlu_version = config["snips_nlu_version"]
-    snips_nlu_rust_version = config["snips_nlu_rust_version"]
-    authors = config["authors"]
-    languages = config.get("languages", None)
-    version = config["version"]
-    intent_names = config.get("intent_names", None)
-    intent_groups = config.get("intent_groups", None)
     print("Fetching intents on %s" % grid)
     intents = get_intents(grid, authors, languages, version, intent_names)
     print("%s intents fetched" % len(intents))
     intent_groups = create_intent_groups(intent_groups, intents)
-
     for group in intent_groups:
         language = group["language"]
         group_name = group["name"]
@@ -111,9 +108,9 @@ def run_and_save_registry_metrics(metrics_config):
         print("Computing metrics for intent group '%s' in language '%s'"
               % (group_name, language))
 
-        for k_fold_size in config["k_fold_sizes"]:
+        for k_fold_size in k_fold_sizes:
             print("\tk_fold_size: %d" % k_fold_size)
-            for max_utterances in config["max_utterances"]:
+            for max_utterances in max_utterances:
                 print("\t\tmax utterances: %d" % max_utterances)
                 metrics = compute_cross_val_metrics(
                     dataset, snips_nlu_version, snips_nlu_rust_version,
@@ -121,7 +118,7 @@ def run_and_save_registry_metrics(metrics_config):
                 if metrics is None:
                     break
                 save_metrics_into_db(
-                    metrics, grid, language, group_name, authors,
+                    db, metrics, grid, language, group_name, authors,
                     max_utterances, k_fold_size, timestamp)
 
 
@@ -129,4 +126,6 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("config_path", help="Path to the metrics config file")
     args = parser.parse_args()
-    run_and_save_registry_metrics(args.config_path)
+    with io.open(args.config_path, encoding="utf8") as f:
+        config = json.load(f)
+    run_and_save_registry_metrics(**config)
