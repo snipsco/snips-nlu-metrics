@@ -21,7 +21,7 @@ def save_metrics_into_db(db, metrics, grid, language, intent_group,
         intent_metrics_entry = deepcopy(base_entry)
         intent_metrics_entry.update({
             "intent_name": intent_name,
-            "author": authors[intent_name],
+            "author": authors.get(intent_name, None),
             "intent_metrics": metrics[intent_name]["intent"],
             "intent_utterances": metrics[intent_name]["intent_utterances"]
         })
@@ -31,7 +31,7 @@ def save_metrics_into_db(db, metrics, grid, language, intent_group,
             slot_metrics_entry = deepcopy(base_entry)
             slot_metrics_entry.update({
                 "intent_name": intent_name,
-                "author": authors[intent_name],
+                "author": authors.get(intent_name, None),
                 "slot_name": slot_name,
                 "slot_metrics": slot_metrics
             })

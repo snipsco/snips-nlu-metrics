@@ -8,6 +8,7 @@
     "de"
   ],
   "max_utterances": [
+    5,
     10,
     25,
     50,

@@ -34,9 +34,12 @@ def compute_cross_val_metrics(dataset, snips_nlu_version,
     """
     nb_utterances = {intent: len(data["utterances"])
                      for intent, data in dataset["intents"].iteritems()}
-    if sum(nb_utterances.values()) < k_fold_size:
+    total_utterances = sum(nb_utterances.values())
+    should_skip = total_utterances < k_fold_size or (
+        max_utterances is not None and total_utterances < max_utterances)
+    if should_skip:
         print("Skipping group because number of utterances is too "
-              "low (%s)" % nb_utterances)
+              "low (%s)" % total_utterances)
         return None
     update_nlu_packages(snips_nlu_version, snips_nlu_rust_version)
     batches = create_k_fold_batches(dataset, k_fold_size, max_utterances)
@@ -110,16 +113,16 @@ def run_and_save_registry_metrics(grid,
 
         for k_fold_size in k_fold_sizes:
             print("\tk_fold_size: %d" % k_fold_size)
-            for max_utterances in max_utterances:
-                print("\t\tmax utterances: %d" % max_utterances)
+            for train_utterances in max_utterances:
+                print("\t\tmax utterances: %d" % train_utterances)
                 metrics = compute_cross_val_metrics(
                     dataset, snips_nlu_version, snips_nlu_rust_version,
-                    k_fold_size, max_utterances)
+                    k_fold_size, train_utterances)
                 if metrics is None:
                     break
                 save_metrics_into_db(
                     db, metrics, grid, language, group_name, authors,
-                    max_utterances, k_fold_size, timestamp)
+                    train_utterances, k_fold_size, timestamp)
 
 
 if __name__ == "__main__":
