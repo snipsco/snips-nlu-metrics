@@ -1,5 +1,5 @@
 {
-  "grid": "dev",
+  "grid": "prod",
   "languages": [
     "fr",
     "en",
@@ -21,11 +21,10 @@
   ],
   "intent_groups": null,
   "intent_names": null,
-  "emails": [
+  "authors": [
     "intents@snips.ai"
   ],
   "version": "latest",
-  "metrics_dir": "/Users/adrien/dev/nlu-metrics/intents_metrics",
   "snips_nlu_version": "0.8.14",
   "snips_nlu_rust_version": "0.21.1"
 }

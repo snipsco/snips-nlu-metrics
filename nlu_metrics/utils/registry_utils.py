@@ -8,10 +8,10 @@ PROD_GATEWAY = 'https://external-gateway.snips.ai/v1/registry/intents'
 DEV_GATEWAY = 'https://external-gateway-dev.snips.ai/v1/registry/intents'
 
 
-def get_intents(grid, emails=None, languages=None, version="latest",
+def get_intents(grid, authors=None, languages=None, version="latest",
                 intent_names=None):
-    if emails is None:
-        emails = ["intents@snips.ai"]
+    if authors is None:
+        authors = ["intents@snips.ai"]
     if intent_names is None:
         intent_names = []
     if languages is None:
@@ -31,8 +31,8 @@ def get_intents(grid, emails=None, languages=None, version="latest",
         "v": version,
         "customIntentData": True
     }
-    if len(emails) == 1:
-        params["email"] = emails[0]
+    if len(authors) == 1:
+        params["email"] = authors[0]
     if len(languages) == 1:
         params["lang"] = languages[0]
 
@@ -49,7 +49,7 @@ def get_intents(grid, emails=None, languages=None, version="latest",
             continue
         if len(languages) > 0 and intent_language not in languages:
             continue
-        if len(emails) > 0 and intent_author not in emails:
+        if len(authors) > 0 and intent_author not in authors:
             continue
         intent['customIntentData']['snips_nlu_version'] = engine_version
         filtered_intents.append(intent)

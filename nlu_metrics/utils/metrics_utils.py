@@ -8,6 +8,12 @@ from snips_nlu.constants import (INTENTS, UTTERANCES, ENGINE_TYPE,
 from nlu_metrics.utils.dataset_utils import (input_string_from_chunks,
                                              get_stratified_utterances)
 
+INITIAL_METRICS = {
+    "true_positive": 0,
+    "false_positive": 0,
+    "false_negative": 0
+}
+
 
 def create_k_fold_batches(dataset, k, max_training_utterances=None, seed=None):
     utterances = get_stratified_utterances(dataset, seed)
@@ -65,21 +71,15 @@ def compute_utterance_metrics(parsing, utterance, utterance_intent):
         [(parsing_intent_name, s["slotName"]) for s in parsed_slots] +
         [(utterance_intent, u[SLOT_NAME]) for u in utterance_slots])
 
-    initial_metrics = {
-        "true_positive": 0,
-        "false_positive": 0,
-        "false_negative": 0
-    }
-
     metrics = {
         intent: {
-            "intent": deepcopy(initial_metrics),
+            "intent": deepcopy(INITIAL_METRICS),
             "slots": dict(),
         } for intent in intent_names
     }
 
     for (intent_name, slot_name) in slot_names:
-        metrics[intent_name]["slots"][slot_name] = deepcopy(initial_metrics)
+        metrics[intent_name]["slots"][slot_name] = deepcopy(INITIAL_METRICS)
 
     if parsing_intent_name == utterance_intent:
         metrics[parsing_intent_name]["intent"]["true_positive"] += 1
@@ -108,21 +108,21 @@ def compute_utterance_metrics(parsing, utterance, utterance_intent):
 
 
 def aggregate_metrics(lhs_metrics, rhs_metrics):
-    aggregated_metrics = deepcopy(lhs_metrics)
+    acc_metrics = deepcopy(lhs_metrics)
     for (intent, intent_metrics) in rhs_metrics.iteritems():
-        if intent not in aggregated_metrics:
-            aggregated_metrics[intent] = deepcopy(intent_metrics)
+        if intent not in acc_metrics:
+            acc_metrics[intent] = deepcopy(intent_metrics)
         else:
-            aggregated_metrics[intent]["intent"] = add_count_metrics(
-                aggregated_metrics[intent]["intent"], intent_metrics["intent"])
-            aggregated_slot_metrics = aggregated_metrics[intent]["slots"]
+            acc_metrics[intent]["intent"] = add_count_metrics(
+                acc_metrics[intent]["intent"], intent_metrics["intent"])
+            acc_slot_metrics = acc_metrics[intent]["slots"]
             for (slot, slot_metrics) in intent_metrics["slots"].iteritems():
-                if slot not in aggregated_slot_metrics:
-                    aggregated_slot_metrics[slot] = deepcopy(slot_metrics)
+                if slot not in acc_slot_metrics:
+                    acc_slot_metrics[slot] = deepcopy(slot_metrics)
                 else:
-                    aggregated_slot_metrics[slot] = add_count_metrics(
-                        aggregated_slot_metrics[slot], slot_metrics)
-    return aggregated_metrics
+                    acc_slot_metrics[slot] = add_count_metrics(
+                        acc_slot_metrics[slot], slot_metrics)
+    return acc_metrics
 
 
 def add_count_metrics(lhs, rhs):
