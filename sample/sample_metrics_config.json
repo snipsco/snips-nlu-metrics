@@ -20,7 +20,93 @@
   "k_fold_sizes": [
     5
   ],
-  "intent_groups": null,
+  "intent_groups": [
+    {
+      "name": "Movie Scheduling",
+      "intents": [
+        "SearchScreeningEvent",
+        "SearchScreeningEventSchedule",
+        "SearchScreeningEventLocation"
+      ]
+    },
+    {
+      "name": "IoT",
+      "intents": [
+        "ActivateLightColor",
+        "ActivateObject",
+        "DeactivateObject",
+        "MuteObject"
+      ]
+    },
+    {
+      "name": "Creative Work",
+      "intents": [
+        "SearchCreativeWork",
+        "SearchCreativeWorkSection",
+        "SuspendCreativeWork",
+        "StartCreativeWork",
+        "StopCreativeWork",
+        "ResumeCreativeWork"
+      ]
+    },
+    {
+      "name": "Core Utils",
+      "intents": [
+        "PauseIntent",
+        "ResumeIntent",
+        "ShuffleOffIntent",
+        "RepeatIntent",
+        "YesIntent",
+        "LoopOnIntent",
+        "PreviousIntent",
+        "NextIntent",
+        "LoopOffIntent",
+        "HelpIntent",
+        "NoIntent",
+        "StopIntent",
+        "ShuffleOnIntent",
+        "StartOverIntent",
+        "CancelIntent"
+      ]
+    },
+    {
+      "name": "Local Search",
+      "intents": [
+        "SearchLocalBusiness"
+      ]
+    },
+    {
+      "name": "Music",
+      "intents": [
+        "StopMusicCreativeWork",
+        "DeleteMusicCreativeWork",
+        "DeactivatePlaybackMode",
+        "ResumeMusicCreativeWork",
+        "PlayMusicCreativeWork",
+        "AddMusicCreativeWork",
+        "CreateMusicPlaylist",
+        "SearchMusicCreativeWorkArtist",
+        "SearchMusicRecordingDuration",
+        "RateMusicCreativeWork",
+        "PlayMusicPlaylist",
+        "SearchMusicRecordingAlbum",
+        "SuspendMusicCreativeWork",
+        "SearchMusicPlaylistTrack",
+        "SearchMusicCreativeWork",
+        "DeleteMusicPlaylist",
+        "RepeatMusicCreativeWork",
+        "ActivatePlaybackMode"
+      ]
+    },
+    {
+      "name": "Weather",
+      "intents": [
+        "SearchWeatherForecastCondition",
+        "SearchWeatherForecastTemperature",
+        "SearchWeatherForecast"
+      ]
+    }
+  ],
   "intent_names": null,
   "authors": [
     "intents@snips.ai"
