@@ -35,7 +35,7 @@ def create_nlu_dataset(registry_intents):
         "language": language,
         "snips_nlu_version": "0.1.0",
         "intents": {
-            intent["config"]["name"]: {
+            intent["config"]["displayName"]: {
                 "engineType": "regex",
                 "utterances": intent["customIntentData"]["utterances"]
             } for intent in registry_intents

@@ -89,9 +89,8 @@ def run_and_save_registry_metrics(grid,
                                   authors,
                                   k_fold_sizes,
                                   max_utterances,
+                                  api_token=None,
                                   languages=None,
-                                  version="latest",
-                                  intent_names=None,
                                   intent_groups=None,
                                   mongo_host="localhost",
                                   mongo_port=27017):
@@ -99,14 +98,14 @@ def run_and_save_registry_metrics(grid,
     db = mongo_client['nlu-metrics']
     timestamp = datetime.datetime.utcnow()
     print("Fetching intents on %s" % grid)
-    intents = get_intents(grid, authors, languages, version, intent_names)
+    intents = get_intents(grid, authors, languages, intent_groups, api_token)
     print("%s intents fetched" % len(intents))
     intent_groups = create_intent_groups(intent_groups, intents)
     for group in intent_groups:
         language = group["language"]
         group_name = group["name"]
         dataset = create_nlu_dataset(group["intents"])
-        authors = {intent["config"]["name"]: intent["config"]["author"]
+        authors = {intent["config"]["displayName"]: intent["config"]["author"]
                    for intent in group["intents"]}
         print("Computing metrics for intent group '%s' in language '%s'"
               % (group_name, language))
