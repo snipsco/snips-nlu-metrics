@@ -8,14 +8,13 @@
     "de"
   ],
   "max_utterances": [
-    5,
-    10,
-    25,
     50,
-    75,
     100,
     250,
-    500
+    500,
+    1000,
+    2000,
+    4000
   ],
   "k_fold_sizes": [
     5
@@ -113,7 +112,6 @@
   ],
   "mongo_host": "localhost",
   "mongo_port": 27017,
-  "version": "latest",
   "snips_nlu_version": "0.8.14",
   "snips_nlu_rust_version": "0.21.1"
 }
