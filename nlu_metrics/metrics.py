@@ -1,5 +1,8 @@
 from __future__ import unicode_literals
 
+import argparse
+import io
+import json
 import time
 
 from pymongo import MongoClient
@@ -94,6 +97,42 @@ def run_and_save_registry_metrics(grid,
                                   output_dir=None,
                                   mongo_host="localhost",
                                   mongo_port=27017):
+    """Compute metrics on registry intents using cross validation
+
+    :param grid: str, "dev" or "prod" --> backend environment to use
+    :param snips_nlu_version: str, semver, version to use for training
+    :param snips_nlu_rust_version: str, semver, version to use for inference
+    :param authors: list, intent author emails that will be used to filter out
+        intents
+
+    :param k_fold_sizes: list, fold sizes to use for cross validation
+    :param max_utterances: list, training sizes to use for cross validation
+    :param api_token: str, must be specified when computing metrics on
+        private intents
+    :param languages: list, intent languages that will be used to filter out
+        intents
+    :param intent_groups: list, groups combining multiple intents.
+        It allows to compute metrics on bundles or assistants, for instance:
+
+        >>> groups = [
+        ...   {
+        ...     "name": "Creative Work",
+        ...     "intents": [
+        ...       "SearchCreativeWork",
+        ...       "SearchCreativeWorkSection",
+        ...       "SuspendCreativeWork",
+        ...       "StartCreativeWork",
+        ...       "StopCreativeWork",
+        ...       "ResumeCreativeWork"
+        ...     ]
+        ...   }
+        ... ]
+
+    :param output_dir: str, optional, if not `None` then the metrics will be
+        saved in json files under the `output_dir` directory
+    :param mongo_host: str, optional, used to persist in a mongo db
+    :param mongo_port: str, optional, used to persist in a mongo db
+    """
     if mongo_port is not None and mongo_host is not None:
         mongo_client = MongoClient(mongo_host, mongo_port)
         db = mongo_client['nlu-metrics']
@@ -130,3 +169,11 @@ def run_and_save_registry_metrics(grid,
                     save_metrics_into_json(
                         metrics, grid, language, group_name, max_utterances,
                         k_fold_size, output_dir, current_time)
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument("config_path", help="Path to the metrics config file")
+    args = parser.parse_args()
+    with io.open(args.config_path, encoding="utf8") as f:
+        config = json.load(f)
+    run_and_save_registry_metrics(**config)
