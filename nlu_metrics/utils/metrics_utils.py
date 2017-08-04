@@ -51,18 +51,19 @@ def create_k_fold_batches(dataset, k, max_training_utterances=None, seed=None):
     return k_fold_batches
 
 
-def compute_engine_metrics(engine, test_utterances):
+def compute_engine_metrics(engine, test_utterances, verbose=False):
     metrics = dict()
     for intent_name, utterance in test_utterances:
         input_string = input_string_from_chunks(utterance[DATA])
         parsing = engine.parse(input_string)
         utterance_metrics = compute_utterance_metrics(parsing, utterance,
-                                                      intent_name)
+                                                      intent_name, verbose)
         metrics = aggregate_metrics(metrics, utterance_metrics)
     return metrics
 
 
-def compute_utterance_metrics(parsing, utterance, utterance_intent):
+def compute_utterance_metrics(parsing, utterance, utterance_intent,
+                              verbose=False):
     if parsing["intent"] is not None:
         parsing_intent_name = parsing["intent"]["intentName"]
     else:
@@ -92,6 +93,15 @@ def compute_utterance_metrics(parsing, utterance, utterance_intent):
     else:
         metrics[parsing_intent_name]["intent"]["false_positive"] += 1
         metrics[utterance_intent]["intent"]["false_negative"] += 1
+        if verbose:
+            print("Intent classification mismatch:\n"
+                  "\tinput:         \t\"{0}\"\n"
+                  "\tintent found:  \t{1} ({2:.0%})\n"
+                  "\tcorrect intent:\t{3}\n"
+                  .format(parsing["input"],
+                          parsing_intent_name,
+                          parsing["intent"]["probability"],
+                          utterance_intent))
         return metrics
 
     for slot in utterance_slots:
@@ -102,6 +112,12 @@ def compute_utterance_metrics(parsing, utterance, utterance_intent):
             slot_metrics["true_positive"] += 1
         else:
             slot_metrics["false_negative"] += 1
+            if verbose:
+                print("Slot filling mismatch (missing slot):\n"
+                      "\tINPUT:     \t\"{0}\"\n"
+                      "\tSLOT:      \t{1}\n"
+                      "\tSLOT VALUE:\t\"{2}\"\n"
+                      .format(parsing["input"], slot_name, slot[TEXT]))
 
     for slot in parsed_slots:
         slot_name = slot["slotName"]
@@ -109,6 +125,12 @@ def compute_utterance_metrics(parsing, utterance, utterance_intent):
         if all(s[SLOT_NAME] != slot_name or s[TEXT] != slot["rawValue"]
                for s in utterance_slots):
             slot_metrics["false_positive"] += 1
+            if verbose:
+                print("Slot filling mismatch (unexpected slot):\n"
+                      "\tINPUT:     \t\"{0}\"\n"
+                      "\tSLOT:      \t{1}\n"
+                      "\tSLOT VALUE:\t\"{2}\"\n"
+                      .format(parsing["input"], slot_name, slot["rawValue"]))
 
     return metrics
 

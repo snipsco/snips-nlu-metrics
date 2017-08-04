@@ -68,9 +68,13 @@ def compute_cross_val_metrics(
     return global_metrics
 
 
-def compute_train_test_metrics(train_dataset, test_dataset,
-                               snips_nlu_version=None,
-                               snips_nlu_rust_version=None, engine=None):
+def compute_train_test_metrics(
+        train_dataset,
+        test_dataset,
+        snips_nlu_version=DEFAULT_TRAINING_VERSION,
+        snips_nlu_rust_version=DEFAULT_INFERENCE_VERSION,
+        engine=None,
+        verbose=False):
     """Compute the main NLU metrics on `test_dataset` after having trained on
     `trained_dataset`
 
@@ -83,6 +87,7 @@ def compute_train_test_metrics(train_dataset, test_dataset,
         version
     :param engine: SnipsNLUEngine instance, if `None` then engine is created
         with the specified `snips_nlu_rust_version`
+    :param verbose: if `True` it will print prediction errors
     :return: dict containing the metrics
     """
     if isinstance(train_dataset, (str, unicode)):
@@ -101,7 +106,7 @@ def compute_train_test_metrics(train_dataset, test_dataset,
         engine = engine.fit(train_dataset)
     utterances = get_stratified_utterances(test_dataset, seed=None,
                                            shuffle=False)
-    metrics = compute_engine_metrics(engine, utterances)
+    metrics = compute_engine_metrics(engine, utterances, verbose)
     metrics = compute_precision_recall(metrics)
     return metrics
 
