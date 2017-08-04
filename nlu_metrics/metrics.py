@@ -167,7 +167,7 @@ def run_and_save_registry_metrics(grid,
                         train_utterances, k_fold_size, current_time)
                 if output_dir is not None:
                     save_metrics_into_json(
-                        metrics, grid, language, group_name, max_utterances,
+                        metrics, grid, language, group_name, train_utterances,
                         k_fold_size, output_dir, current_time)
 
 if __name__ == "__main__":
