@@ -22,7 +22,7 @@ extras_require = {
     "test": [
         "mock==2.0.0",
         "snips_nlu==0.8.14",
-        "snips_nlu_rust==0.21.1",
+        "snips_nlu_rust==0.22.3",
     ]
 }
 

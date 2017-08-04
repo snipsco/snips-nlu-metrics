@@ -65,19 +65,26 @@ def compute_cross_val_metrics(dataset, snips_nlu_version,
 
 
 def compute_train_test_metrics(train_dataset, test_dataset,
-                               snips_nlu_version, snips_nlu_rust_version):
+                               snips_nlu_version=None,
+                               snips_nlu_rust_version=None, engine=None):
     """Compute the main NLU metrics on `test_dataset` after having trained on
     `trained_dataset`
 
     :param train_dataset: dict, dataset used for training
     :param test_dataset: dict, dataset used for testing
-    :param snips_nlu_version: str, semver, None --> use local version
-    :param snips_nlu_rust_version: str, semver, None --> use local version
+    :param snips_nlu_version: str, semver, if `None` then use local version
+    :param snips_nlu_rust_version: str, semver, if `None` then use local
+        version
+    :param engine: SnipsNLUEngine instance, if `None` then engine is created
+        with the specified `snips_nlu_rust_version`
     :return: dict containing the metrics
     """
     update_nlu_packages(snips_nlu_version=snips_nlu_version,
                         snips_nlu_rust_version=snips_nlu_rust_version)
-    engine = get_trained_nlu_engine(train_dataset)
+    if engine is None:
+        engine = get_trained_nlu_engine(train_dataset)
+    else:
+        engine = engine.fit(train_dataset)
     utterances = get_stratified_utterances(test_dataset, seed=None,
                                            shuffle=False)
     metrics = compute_engine_metrics(engine, utterances)
@@ -169,6 +176,7 @@ def run_and_save_registry_metrics(grid,
                     save_metrics_into_json(
                         metrics, grid, language, group_name, train_utterances,
                         k_fold_size, output_dir, current_time)
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
