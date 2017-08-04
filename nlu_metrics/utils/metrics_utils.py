@@ -16,6 +16,12 @@ INITIAL_METRICS = {
 
 
 def create_k_fold_batches(dataset, k, max_training_utterances=None, seed=None):
+    dataset = deepcopy(dataset)
+    # Remove entity values in order to un-bias the cross validation
+    for entity in dataset["entities"].values():
+        if entity["automatically_extensible"]:
+            entity["data"] = []
+
     utterances = get_stratified_utterances(dataset, seed)
     if len(utterances) < k:
         raise AssertionError("The number of utterances ({0}) should be "

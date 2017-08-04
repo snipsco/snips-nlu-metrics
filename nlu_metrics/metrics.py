@@ -1,13 +1,12 @@
 from __future__ import unicode_literals
 
-import argparse
-import datetime
-import io
-import json
+import time
 
 from pymongo import MongoClient
 
-from nlu_metrics.database import save_metrics_into_db
+from nlu_metrics.metrics_io import save_metrics_into_db
+
+from nlu_metrics.metrics_io import save_metrics_into_json
 from nlu_metrics.utils.dataset_utils import (get_stratified_utterances,
                                              create_nlu_dataset)
 from nlu_metrics.utils.dependency_utils import update_nlu_packages
@@ -92,11 +91,15 @@ def run_and_save_registry_metrics(grid,
                                   api_token=None,
                                   languages=None,
                                   intent_groups=None,
+                                  output_dir=None,
                                   mongo_host="localhost",
                                   mongo_port=27017):
-    mongo_client = MongoClient(mongo_host, mongo_port)
-    db = mongo_client['nlu-metrics']
-    timestamp = datetime.datetime.utcnow()
+    if mongo_port is not None and mongo_host is not None:
+        mongo_client = MongoClient(mongo_host, mongo_port)
+        db = mongo_client['nlu-metrics']
+    else:
+        db = None
+    current_time = int(time.time())
     print("Fetching intents on %s" % grid)
     intents = get_intents(grid, authors, languages, intent_groups, api_token)
     print("%s intents fetched" % len(intents))
@@ -119,15 +122,11 @@ def run_and_save_registry_metrics(grid,
                     k_fold_size, train_utterances)
                 if metrics is None:
                     break
-                save_metrics_into_db(
-                    db, metrics, grid, language, group_name, authors,
-                    train_utterances, k_fold_size, timestamp)
-
-
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
-    parser.add_argument("config_path", help="Path to the metrics config file")
-    args = parser.parse_args()
-    with io.open(args.config_path, encoding="utf8") as f:
-        config = json.load(f)
-    run_and_save_registry_metrics(**config)
+                if db is not None:
+                    save_metrics_into_db(
+                        db, metrics, grid, language, group_name, authors,
+                        train_utterances, k_fold_size, current_time)
+                if output_dir is not None:
+                    save_metrics_into_json(
+                        metrics, grid, language, group_name, max_utterances,
+                        k_fold_size, output_dir, current_time)
