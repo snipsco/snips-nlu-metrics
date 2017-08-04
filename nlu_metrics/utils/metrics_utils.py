@@ -94,13 +94,16 @@ def compute_utterance_metrics(parsing, utterance, utterance_intent,
         metrics[parsing_intent_name]["intent"]["false_positive"] += 1
         metrics[utterance_intent]["intent"]["false_negative"] += 1
         if verbose:
+            intent_proba = parsing["intent"]["probability"] \
+                if parsing["intent"] is not None else 0.0
+            print("INTENT PROBA: %s" % intent_proba)
             print("Intent classification mismatch:\n"
                   "\tinput:         \t\"{0}\"\n"
                   "\tintent found:  \t{1} ({2:.0%})\n"
                   "\tcorrect intent:\t{3}\n"
                   .format(parsing["input"],
                           parsing_intent_name,
-                          parsing["intent"]["probability"],
+                          intent_proba,
                           utterance_intent))
         return metrics
 
