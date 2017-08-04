@@ -13,7 +13,8 @@ from snips_nlu_rust import NLUEngine as RustNLUEngine
 TRAINED_ENGINE_FILENAME = "trained_assistant.json"
 
 
-def get_trained_nlu_engine(language, dataset):
+def get_trained_nlu_engine(dataset):
+    language = dataset["language"]
     trained_engine_dict = SnipsNLUEngine(language).fit(dataset).to_dict()
     engine_dir = mkdtemp()
     try:
