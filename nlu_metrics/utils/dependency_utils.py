@@ -1,8 +1,18 @@
 from __future__ import unicode_literals
 
+import io
+import os
 from subprocess import check_output, CalledProcessError
 
 import pip
+
+PACKAGE_PATH = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+with io.open(os.path.join(PACKAGE_PATH, "__default_training_version__")) as f:
+    DEFAULT_TRAINING_VERSION = f.readline().strip()
+
+with io.open(os.path.join(PACKAGE_PATH, "__default_inference_version__")) as f:
+    DEFAULT_INFERENCE_VERSION = f.readline().strip()
 
 
 def update_nlu_packages(snips_nlu_version, snips_nlu_rust_version):

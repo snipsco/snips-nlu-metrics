@@ -13,6 +13,12 @@ VERSION = "__version__"
 with io.open(os.path.join(PACKAGE_PATH, VERSION)) as f:
     version = f.readline().strip()
 
+with io.open(os.path.join(PACKAGE_PATH, "__default_training_version__")) as f:
+    training_version = f.readline().strip()
+
+with io.open(os.path.join(PACKAGE_PATH, "__default_inference_version__")) as f:
+    inference_version = f.readline().strip()
+
 install_requires = [
     "requests==2.18.2",
     "pymongo==3.4.0"
@@ -21,8 +27,8 @@ install_requires = [
 extras_require = {
     "test": [
         "mock==2.0.0",
-        "snips_nlu==0.8.14",
-        "snips_nlu_rust==0.22.3",
+        "snips_nlu==%s" % training_version,
+        "snips_nlu_rust==%s" % inference_version,
     ]
 }
 

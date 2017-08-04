@@ -8,10 +8,11 @@ import time
 from pymongo import MongoClient
 
 from nlu_metrics.metrics_io import save_metrics_into_db
-
 from nlu_metrics.metrics_io import save_metrics_into_json
 from nlu_metrics.utils.dataset_utils import (get_stratified_utterances,
                                              create_nlu_dataset)
+from nlu_metrics.utils.dependency_utils import (DEFAULT_TRAINING_VERSION,
+                                                DEFAULT_INFERENCE_VERSION)
 from nlu_metrics.utils.dependency_utils import update_nlu_packages
 from nlu_metrics.utils.metrics_utils import (create_k_fold_batches,
                                              compute_engine_metrics,
@@ -21,9 +22,12 @@ from nlu_metrics.utils.nlu_engine_utils import get_trained_nlu_engine
 from nlu_metrics.utils.registry_utils import get_intents, create_intent_groups
 
 
-def compute_cross_val_metrics(dataset, snips_nlu_version,
-                              snips_nlu_rust_version, k_fold_size=5,
-                              max_utterances=None):
+def compute_cross_val_metrics(
+        dataset,
+        snips_nlu_version=DEFAULT_TRAINING_VERSION,
+        snips_nlu_rust_version=DEFAULT_INFERENCE_VERSION,
+        k_fold_size=5,
+        max_utterances=None):
     """Compute the main NLU metrics on the dataset using cross validation
 
     :param dataset: dict
@@ -70,8 +74,10 @@ def compute_train_test_metrics(train_dataset, test_dataset,
     """Compute the main NLU metrics on `test_dataset` after having trained on
     `trained_dataset`
 
-    :param train_dataset: dict, dataset used for training
-    :param test_dataset: dict, dataset used for testing
+    :param train_dataset: dict or str, dataset or path to dataset used for
+        training
+    :param test_dataset: dict or str, dataset or path to dataset used for
+        testing
     :param snips_nlu_version: str, semver, if `None` then use local version
     :param snips_nlu_rust_version: str, semver, if `None` then use local
         version
@@ -79,6 +85,14 @@ def compute_train_test_metrics(train_dataset, test_dataset,
         with the specified `snips_nlu_rust_version`
     :return: dict containing the metrics
     """
+    if isinstance(train_dataset, (str, unicode)):
+        with io.open(train_dataset, encoding="utf8") as f:
+            train_dataset = json.load(f)
+
+    if isinstance(test_dataset, (str, unicode)):
+        with io.open(test_dataset, encoding="utf8") as f:
+            test_dataset = json.load(f)
+
     update_nlu_packages(snips_nlu_version=snips_nlu_version,
                         snips_nlu_rust_version=snips_nlu_rust_version)
     if engine is None:
@@ -92,18 +106,19 @@ def compute_train_test_metrics(train_dataset, test_dataset,
     return metrics
 
 
-def run_and_save_registry_metrics(grid,
-                                  snips_nlu_version,
-                                  snips_nlu_rust_version,
-                                  authors,
-                                  k_fold_sizes,
-                                  max_utterances,
-                                  api_token=None,
-                                  languages=None,
-                                  intent_groups=None,
-                                  output_dir=None,
-                                  mongo_host="localhost",
-                                  mongo_port=27017):
+def run_and_save_registry_metrics(
+        grid,
+        authors,
+        k_fold_sizes,
+        max_utterances,
+        snips_nlu_version=DEFAULT_TRAINING_VERSION,
+        snips_nlu_rust_version=DEFAULT_INFERENCE_VERSION,
+        api_token=None,
+        languages=None,
+        intent_groups=None,
+        output_dir=None,
+        mongo_host="localhost",
+        mongo_port=27017):
     """Compute metrics on registry intents using cross validation
 
     :param grid: str, "dev" or "prod" --> backend environment to use
@@ -111,9 +126,8 @@ def run_and_save_registry_metrics(grid,
     :param snips_nlu_rust_version: str, semver, version to use for inference
     :param authors: list, intent author emails that will be used to filter out
         intents
-
-    :param k_fold_sizes: list, fold sizes to use for cross validation
     :param max_utterances: list, training sizes to use for cross validation
+    :param k_fold_sizes: list, fold sizes to use for cross validation
     :param api_token: str, must be specified when computing metrics on
         private intents
     :param languages: list, intent languages that will be used to filter out
@@ -182,6 +196,6 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("config_path", help="Path to the metrics config file")
     args = parser.parse_args()
-    with io.open(args.config_path, encoding="utf8") as f:
-        config = json.load(f)
+    with io.open(args.config_path, encoding="utf8") as config_file:
+        config = json.load(config_file)
     run_and_save_registry_metrics(**config)
