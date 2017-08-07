@@ -18,7 +18,9 @@ INITIAL_METRICS = {
 def create_k_fold_batches(dataset, k, max_training_utterances=None, seed=None):
     dataset = deepcopy(dataset)
     # Remove entity values in order to un-bias the cross validation
-    for entity in dataset["entities"].values():
+    for name, entity in dataset["entities"].iteritems():
+        if name.startswith("snips/"):
+            continue
         if entity["automatically_extensible"]:
             entity["data"] = []
 
