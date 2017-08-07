@@ -30,7 +30,7 @@ def compute_cross_val_metrics(
         max_utterances=None):
     """Compute the main NLU metrics on the dataset using cross validation
 
-    :param dataset: dict
+    :param dataset: dict or str, dataset or path to dataset
     :param snips_nlu_version: optional str, semver, None --> use local version
     :param snips_nlu_rust_version: str, semver, None --> use local version
     :param k_fold_size: int, number of folds to use for cross validation
@@ -38,6 +38,11 @@ def compute_cross_val_metrics(
     :return: dict containing the metrics
 
     """
+
+    if isinstance(dataset, (str, unicode)):
+        with io.open(dataset, encoding="utf8") as f:
+            dataset = json.load(f)
+
     nb_utterances = {intent: len(data["utterances"])
                      for intent, data in dataset["intents"].iteritems()}
     total_utterances = sum(nb_utterances.values())
