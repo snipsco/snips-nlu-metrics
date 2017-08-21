@@ -2,6 +2,7 @@ from __future__ import unicode_literals
 
 from copy import deepcopy
 
+from snips_nlu.builtin_entities import is_builtin_entity
 from snips_nlu.constants import (INTENTS, UTTERANCES, ENGINE_TYPE,
                                  CUSTOM_ENGINE, DATA, SLOT_NAME, TEXT)
 
@@ -19,7 +20,7 @@ def create_k_fold_batches(dataset, k, max_training_utterances=None, seed=None):
     dataset = deepcopy(dataset)
     # Remove entity values in order to un-bias the cross validation
     for name, entity in dataset["entities"].iteritems():
-        if name.startswith("snips/"):
+        if is_builtin_entity(name):
             continue
         if entity["automatically_extensible"]:
             entity["data"] = []
