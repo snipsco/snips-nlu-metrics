@@ -32,8 +32,8 @@ def compute_cross_val_metrics(
     """Compute the main NLU metrics on the dataset using cross validation
 
     :param dataset: dict or str, dataset or path to dataset
-    :param snips_nlu_version: optional str, semver, None --> use local version
-    :param snips_nlu_rust_version: str, semver, None --> use local version
+    :param snips_nlu_version: str, semver
+    :param snips_nlu_rust_version: str, semver
     :param training_engine_class: SnipsNLUEngine class, if `None` then the
         engine used for training is created with the specified
         `snips_nlu_version`
@@ -92,9 +92,8 @@ def compute_train_test_metrics(
         training
     :param test_dataset: dict or str, dataset or path to dataset used for
         testing
-    :param snips_nlu_version: str, semver, if `None` then use local version
-    :param snips_nlu_rust_version: str, semver, if `None` then use local
-        version
+    :param snips_nlu_version: str, semver
+    :param snips_nlu_rust_version: str, semver
     :param training_engine_class: SnipsNLUEngine class, if `None` then the
         engine used for training is created with the specified
         `snips_nlu_version`
