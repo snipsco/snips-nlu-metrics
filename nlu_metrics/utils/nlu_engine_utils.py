@@ -13,9 +13,14 @@ from snips_nlu_rust import NLUEngine as RustNLUEngine
 TRAINED_ENGINE_FILENAME = "trained_assistant.json"
 
 
-def get_trained_nlu_engine(dataset):
+def get_trained_nlu_engine(dataset, engine_class):
     language = dataset["language"]
-    trained_engine_dict = SnipsNLUEngine(language).fit(dataset).to_dict()
+    if engine_class is not None:
+        engine = engine_class(language)
+    else:
+        engine = SnipsNLUEngine(language)
+    engine.fit(dataset)
+    trained_engine_dict = engine.to_dict()
     engine_dir = mkdtemp()
     try:
         trained_engine_path = os.path.join(engine_dir, TRAINED_ENGINE_FILENAME)
