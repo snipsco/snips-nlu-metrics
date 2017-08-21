@@ -26,6 +26,7 @@ def compute_cross_val_metrics(
         dataset,
         snips_nlu_version=DEFAULT_TRAINING_VERSION,
         snips_nlu_rust_version=DEFAULT_INFERENCE_VERSION,
+        training_engine_class=None,
         k_fold_size=5,
         max_utterances=None):
     """Compute the main NLU metrics on the dataset using cross validation
@@ -33,6 +34,9 @@ def compute_cross_val_metrics(
     :param dataset: dict or str, dataset or path to dataset
     :param snips_nlu_version: optional str, semver, None --> use local version
     :param snips_nlu_rust_version: str, semver, None --> use local version
+    :param training_engine_class: SnipsNLUEngine class, if `None` then the
+        engine used for training is created with the specified
+        `snips_nlu_version`
     :param k_fold_size: int, number of folds to use for cross validation
     :param max_utterances: int, max number of utterances to use for training
     :return: dict containing the metrics
@@ -58,7 +62,8 @@ def compute_cross_val_metrics(
 
     for batch_index, (train_dataset, test_utterances) in enumerate(batches):
         try:
-            engine = get_trained_nlu_engine(train_dataset)
+            engine = get_trained_nlu_engine(train_dataset,
+                                            training_engine_class)
         except Exception as e:
             print("Skipping group because of training error: %s" % e.message)
             return None
@@ -78,7 +83,7 @@ def compute_train_test_metrics(
         test_dataset,
         snips_nlu_version=DEFAULT_TRAINING_VERSION,
         snips_nlu_rust_version=DEFAULT_INFERENCE_VERSION,
-        engine=None,
+        training_engine_class=None,
         verbose=False):
     """Compute the main NLU metrics on `test_dataset` after having trained on
     `trained_dataset`
@@ -90,8 +95,9 @@ def compute_train_test_metrics(
     :param snips_nlu_version: str, semver, if `None` then use local version
     :param snips_nlu_rust_version: str, semver, if `None` then use local
         version
-    :param engine: SnipsNLUEngine instance, if `None` then engine is created
-        with the specified `snips_nlu_rust_version`
+    :param training_engine_class: SnipsNLUEngine class, if `None` then the
+        engine used for training is created with the specified
+        `snips_nlu_version`
     :param verbose: if `True` it will print prediction errors
     :return: dict containing the metrics
     """
@@ -105,10 +111,7 @@ def compute_train_test_metrics(
 
     update_nlu_packages(snips_nlu_version=snips_nlu_version,
                         snips_nlu_rust_version=snips_nlu_rust_version)
-    if engine is None:
-        engine = get_trained_nlu_engine(train_dataset)
-    else:
-        engine = engine.fit(train_dataset)
+    engine = get_trained_nlu_engine(train_dataset, training_engine_class)
     utterances = get_stratified_utterances(test_dataset, seed=None,
                                            shuffle=False)
     metrics = compute_engine_metrics(engine, utterances, verbose)
@@ -123,6 +126,7 @@ def run_and_save_registry_metrics(
         max_utterances,
         snips_nlu_version=DEFAULT_TRAINING_VERSION,
         snips_nlu_rust_version=DEFAULT_INFERENCE_VERSION,
+        training_engine_class=None,
         api_token=None,
         languages=None,
         intent_groups=None,
@@ -134,6 +138,9 @@ def run_and_save_registry_metrics(
     :param grid: str, "dev" or "prod" --> backend environment to use
     :param snips_nlu_version: str, semver, version to use for training
     :param snips_nlu_rust_version: str, semver, version to use for inference
+    :param training_engine_class: SnipsNLUEngine class, if `None` then the
+        engine used for training is created with the specified
+        `snips_nlu_version`
     :param authors: list, intent author emails that will be used to filter out
         intents
     :param max_utterances: list, training sizes to use for cross validation
@@ -189,7 +196,7 @@ def run_and_save_registry_metrics(
                 print("\t\tmax utterances: %d" % train_utterances)
                 metrics = compute_cross_val_metrics(
                     dataset, snips_nlu_version, snips_nlu_rust_version,
-                    k_fold_size, train_utterances)
+                    training_engine_class, k_fold_size, train_utterances)
                 if metrics is None:
                     break
                 if db is not None:
