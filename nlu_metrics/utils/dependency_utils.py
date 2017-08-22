@@ -16,11 +16,9 @@ with io.open(os.path.join(PACKAGE_PATH, "__default_inference_version__")) as f:
 
 
 def update_nlu_packages(snips_nlu_version, snips_nlu_rust_version):
-    if snips_nlu_version is not None:
-        update_package(package_name='snips_nlu', version=snips_nlu_version)
-    if snips_nlu_rust_version is not None:
-        update_package(package_name='snips_nlu_rust',
-                       version=snips_nlu_rust_version)
+    update_package(package_name='snips_nlu', version=snips_nlu_version)
+    update_package(package_name='snips_nlu_rust',
+                   version=snips_nlu_rust_version)
 
 
 def update_package(package_name, version):

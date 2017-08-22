@@ -39,7 +39,7 @@ metrics = compute_train_test_metrics("path/to/train_dataset.json",
                                      verbose=True)
 ```
 `verbose=True` will output some logs about the model errors.
-Optionally, you can specify the version of the training package (`snips_nlu_version`) and inference package (`snips_nlu_rust_version`). The `engine` parameter lets you use a specific NLU engine for both training and inference.
+Optionally, you can specify the version of the training package (`snips_nlu_version`) and inference package (`snips_nlu_rust_version`). The `training_engine_class` parameter lets you use a specific NLU engine for training.
 
 ### Cross validation metrics
 
@@ -52,3 +52,4 @@ metrics = compute_cross_val_metrics("path/to/dataset.json")
 ```
 
 Optionally, you can specify the version of the training package (`snips_nlu_version`) and inference package (`snips_nlu_rust_version`), as well as the max size of the training set (`max_utterances`) and the number of folds to use (`k_folds`).
+The `training_engine_class` parameter lets you use a specific NLU engine for training.
