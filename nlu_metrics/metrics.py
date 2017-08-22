@@ -27,8 +27,8 @@ def compute_cross_val_metrics(
         snips_nlu_version=DEFAULT_TRAINING_VERSION,
         snips_nlu_rust_version=DEFAULT_INFERENCE_VERSION,
         training_engine_class=None,
-        k_fold_size=5,
-        max_utterances=None):
+        nb_folds=5,
+        training_utterances=None):
     """Compute the main NLU metrics on the dataset using cross validation
 
     :param dataset: dict or str, dataset or path to dataset
@@ -37,11 +37,19 @@ def compute_cross_val_metrics(
     :param training_engine_class: SnipsNLUEngine class, if `None` then the
         engine used for training is created with the specified
         `snips_nlu_version`
-    :param k_fold_size: int, number of folds to use for cross validation
-    :param max_utterances: int, max number of utterances to use for training
+    :param nb_folds: int, number of folds to use for cross validation
+    :param training_utterances: int, max number of utterances to use for
+        training
     :return: dict containing the metrics
 
     """
+
+    metrics_config = {
+        "training_version": snips_nlu_version,
+        "inference_version": snips_nlu_rust_version,
+        "nb_folds": nb_folds,
+        "training_utterances": training_utterances
+    }
 
     if isinstance(dataset, (str, unicode)):
         with io.open(dataset, encoding="utf8") as f:
@@ -50,14 +58,20 @@ def compute_cross_val_metrics(
     nb_utterances = {intent: len(data["utterances"])
                      for intent, data in dataset["intents"].iteritems()}
     total_utterances = sum(nb_utterances.values())
-    should_skip = total_utterances < k_fold_size or (
-        max_utterances is not None and total_utterances < max_utterances)
+    should_skip = total_utterances < nb_folds or (
+        training_utterances is not None and
+        total_utterances < training_utterances)
     if should_skip:
         print("Skipping group because number of utterances is too "
               "low (%s)" % total_utterances)
-        return None
+        return {
+            "config": metrics_config,
+            "training_info": "not enough utterances for training (%s)"
+                             % total_utterances,
+            "metrics": None
+        }
     update_nlu_packages(snips_nlu_version, snips_nlu_rust_version)
-    batches = create_k_fold_batches(dataset, k_fold_size, max_utterances)
+    batches = create_k_fold_batches(dataset, nb_folds, training_utterances)
     global_metrics = dict()
 
     for batch_index, (train_dataset, test_utterances) in enumerate(batches):
@@ -66,7 +80,11 @@ def compute_cross_val_metrics(
                                             training_engine_class)
         except Exception as e:
             print("Skipping group because of training error: %s" % e.message)
-            return None
+            return {
+                "config": metrics_config,
+                "training_info": "training error: '%s'" % e.message,
+                "metrics": None
+            }
         batch_metrics = compute_engine_metrics(engine, test_utterances)
         global_metrics = aggregate_metrics(global_metrics, batch_metrics)
 
@@ -75,7 +93,10 @@ def compute_cross_val_metrics(
     for intent, metrics in global_metrics.iteritems():
         metrics["intent_utterances"] = nb_utterances.get(intent, 0)
 
-    return global_metrics
+    return {
+        "config": metrics_config,
+        "metrics": global_metrics
+    }
 
 
 def compute_train_test_metrics(
@@ -115,7 +136,13 @@ def compute_train_test_metrics(
                                            shuffle=False)
     metrics = compute_engine_metrics(engine, utterances, verbose)
     metrics = compute_precision_recall(metrics)
-    return metrics
+    return {
+        "config": {
+            "training_version": snips_nlu_version,
+            "inference_version": snips_nlu_rust_version,
+        },
+        "metrics": metrics
+    }
 
 
 def run_and_save_registry_metrics(
@@ -196,6 +223,7 @@ def run_and_save_registry_metrics(
                 metrics = compute_cross_val_metrics(
                     dataset, snips_nlu_version, snips_nlu_rust_version,
                     training_engine_class, k_fold_size, train_utterances)
+                metrics = metrics["metrics"]
                 if metrics is None:
                     break
                 if db is not None:
