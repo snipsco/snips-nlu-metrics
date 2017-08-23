@@ -15,6 +15,8 @@ INITIAL_METRICS = {
     "false_negative": 0
 }
 
+NONE_INTENT_NAME = "null"
+
 
 def create_k_fold_batches(dataset, k, max_training_utterances=None, seed=None):
     dataset = deepcopy(dataset)
@@ -70,7 +72,8 @@ def compute_utterance_metrics(parsing, utterance, utterance_intent,
     if parsing["intent"] is not None:
         parsing_intent_name = parsing["intent"]["intentName"]
     else:
-        parsing_intent_name = None
+        # Use a string here to avoid having a None key in the metrics dict
+        parsing_intent_name = NONE_INTENT_NAME
 
     parsed_slots = [] if parsing["slots"] is None else parsing["slots"]
     utterance_slots = filter(lambda chunk: SLOT_NAME in chunk, utterance[DATA])
