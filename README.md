@@ -34,12 +34,17 @@ This API lets you train the model on a specific dataset and compute metrics anot
 ```python
 from nlu_metrics import compute_train_test_metrics
 
-metrics = compute_train_test_metrics("path/to/train_dataset.json", 
-                                     "path/to/test_dataset.json", 
+metrics = compute_train_test_metrics(train_dataset="path/to/train_dataset.json", 
+                                     test_dataset="path/to/test_dataset.json",
+                                     snips_nlu_version="0.8.18",
+                                     snips_nlu_rust_version="0.25.2",
                                      verbose=True)
 ```
-`verbose=True` will output some logs about the model errors.
-Optionally, you can specify the version of the training package (`snips_nlu_version`) and inference package (`snips_nlu_rust_version`). The `training_engine_class` parameter lets you use a specific NLU engine for training.
+
+- `snips_nlu_version`: version of the training package
+- `snips_nlu_rust_version`: version of the inference package
+- `training_engine_class` (optional): specific NLU engine class to use for training
+- `verbose` (optional): if `True`, will output some logs about the model errors.
 
 ### Cross validation metrics
 
@@ -48,8 +53,15 @@ This API lets you compute metrics on a dataset using cross validation:
 ```python
 from nlu_metrics import compute_cross_val_metrics
 
-metrics = compute_cross_val_metrics("path/to/dataset.json")
+metrics = compute_cross_val_metrics(dataset="path/to/dataset.json",
+                                    snips_nlu_version="0.8.18",
+                                    snips_nlu_rust_version="0.25.2",
+                                    training_engine_class=None,
+                                    nb_folds=5,
+                                    training_utterances=50)
 ```
-
-Optionally, you can specify the version of the training package (`snips_nlu_version`) and inference package (`snips_nlu_rust_version`), as well as the max size of the training set (`max_utterances`) and the number of folds to use (`k_folds`).
-The `training_engine_class` parameter lets you use a specific NLU engine for training.
+- `snips_nlu_version`: version of the training package
+- `snips_nlu_rust_version`: version of the inference package
+- `training_engine_class` (optional): specific NLU engine class to use for training
+- `max_utterances` (optional): max size of the training set, default to the size of the dataset
+- `nb_folds` (optional): number of folds to use, default to 5

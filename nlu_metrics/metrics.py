@@ -11,8 +11,6 @@ from nlu_metrics.metrics_io import save_metrics_into_db
 from nlu_metrics.metrics_io import save_metrics_into_json
 from nlu_metrics.utils.dataset_utils import (get_stratified_utterances,
                                              create_nlu_dataset)
-from nlu_metrics.utils.dependency_utils import (DEFAULT_TRAINING_VERSION,
-                                                DEFAULT_INFERENCE_VERSION)
 from nlu_metrics.utils.dependency_utils import update_nlu_packages
 from nlu_metrics.utils.metrics_utils import (create_k_fold_batches,
                                              compute_engine_metrics,
@@ -24,8 +22,8 @@ from nlu_metrics.utils.registry_utils import get_intents, create_intent_groups
 
 def compute_cross_val_metrics(
         dataset,
-        snips_nlu_version=DEFAULT_TRAINING_VERSION,
-        snips_nlu_rust_version=DEFAULT_INFERENCE_VERSION,
+        snips_nlu_version,
+        snips_nlu_rust_version,
         training_engine_class=None,
         nb_folds=5,
         training_utterances=None):
@@ -102,8 +100,8 @@ def compute_cross_val_metrics(
 def compute_train_test_metrics(
         train_dataset,
         test_dataset,
-        snips_nlu_version=DEFAULT_TRAINING_VERSION,
-        snips_nlu_rust_version=DEFAULT_INFERENCE_VERSION,
+        snips_nlu_version,
+        snips_nlu_rust_version,
         training_engine_class=None,
         verbose=False):
     """Compute the main NLU metrics on `test_dataset` after having trained on
@@ -150,8 +148,8 @@ def run_and_save_registry_metrics(
         authors,
         k_fold_sizes,
         max_utterances,
-        snips_nlu_version=DEFAULT_TRAINING_VERSION,
-        snips_nlu_rust_version=DEFAULT_INFERENCE_VERSION,
+        snips_nlu_version,
+        snips_nlu_rust_version,
         training_engine_class=None,
         api_token=None,
         languages=None,
