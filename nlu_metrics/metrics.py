@@ -3,13 +3,14 @@ from __future__ import unicode_literals
 import io
 import json
 
-from nlu_metrics.utils.dataset_utils import (get_stratified_utterances)
+from nlu_metrics.utils.dataset_utils import get_stratified_utterances
+from nlu_metrics.utils.exception import NotEnoughDataError
 from nlu_metrics.utils.metrics_utils import (create_k_fold_batches,
                                              compute_engine_metrics,
                                              aggregate_metrics,
                                              compute_precision_recall)
-from nlu_metrics.utils.nlu_engine_utils import get_inference_engine, \
-    get_trained_engine
+from nlu_metrics.utils.nlu_engine_utils import (get_inference_engine,
+                                                get_trained_engine)
 from nlu_metrics.utils.constants import INTENTS, UTTERANCES
 
 
@@ -18,14 +19,14 @@ def compute_cross_val_metrics(
         training_engine_class,
         inference_engine_class,
         nb_folds=5,
-        training_utterances=None):
+        train_size_ratio=1.0):
     """Compute the main NLU metrics on the dataset using cross validation
 
     :param dataset: dict or str, dataset or path to dataset
     :param training_engine_class: python class to use for training
     :param inference_engine_class: python class to use for inference
     :param nb_folds: int, number of folds to use for cross validation
-    :param training_utterances: int, max number of utterances to use for
+    :param train_size_ratio: float, ratio of intent utterances to use for
         training
     :return: dict containing the metrics
 
@@ -33,7 +34,7 @@ def compute_cross_val_metrics(
 
     metrics_config = {
         "nb_folds": nb_folds,
-        "training_utterances": training_utterances
+        "train_size_ratio": train_size_ratio
     }
 
     if isinstance(dataset, (str, unicode)):
@@ -43,19 +44,23 @@ def compute_cross_val_metrics(
     nb_utterances = {intent: len(data[UTTERANCES])
                      for intent, data in dataset[INTENTS].iteritems()}
     total_utterances = sum(nb_utterances.values())
-    should_skip = total_utterances < nb_folds or (
-        training_utterances is not None and
-        total_utterances < training_utterances)
-    if should_skip:
-        print("Skipping group because number of utterances is too "
-              "low (%s)" % total_utterances)
+    if total_utterances < nb_folds:
+        message = "number of utterances is too low (%s)" % total_utterances
+        print("Skipping group because of: %s" % message)
         return {
             "config": metrics_config,
-            "training_info": "not enough utterances for training (%s)"
-                             % total_utterances,
+            "training_info": message,
             "metrics": None
         }
-    batches = create_k_fold_batches(dataset, nb_folds, training_utterances)
+    try:
+        batches = create_k_fold_batches(dataset, nb_folds, train_size_ratio)
+    except NotEnoughDataError as e:
+        print("Skipping group because of: %s" % e.message)
+        return {
+            "config": metrics_config,
+            "training_info": e.message,
+            "metrics": None
+        }
     global_metrics = dict()
 
     for batch_index, (train_dataset, test_utterances) in enumerate(batches):
