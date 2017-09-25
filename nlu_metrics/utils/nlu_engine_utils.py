@@ -7,22 +7,34 @@ import shutil
 import zipfile
 from tempfile import mkdtemp
 
-from snips_nlu.nlu_engine import SnipsNLUEngine
-from snips_nlu_rust import NLUEngine as RustNLUEngine
-
 TRAINED_ENGINE_FILENAME = "trained_assistant.json"
 
 
-def get_trained_nlu_engine(dataset, engine_class):
-    language = dataset["language"]
-    if engine_class is not None:
-        engine = engine_class(language)
-    else:
-        engine = SnipsNLUEngine(language)
-    engine.fit(dataset)
-    trained_engine_dict = engine.to_dict()
-    engine_dir = mkdtemp()
-    try:
+class tempdir_ctx(object):
+    def __init__(self, suffix="", prefix="tmp", dir=None):
+        self.suffix = suffix
+        self.prefix = prefix
+        self.dir = dir
+
+    def __enter__(self):
+        self.engine_dir = mkdtemp(suffix=self.suffix, prefix=self.prefix,
+                                  dir=self.dir)
+        return self.engine_dir
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        shutil.rmtree(self.engine_dir)
+
+
+def get_trained_engine(train_dataset, training_engine_class):
+    language = train_dataset["language"]
+    engine = training_engine_class(language)
+    engine.fit(train_dataset)
+    return engine
+
+
+def get_inference_engine(language, trained_engine_dict,
+                         inference_engine_class):
+    with tempdir_ctx() as engine_dir:
         trained_engine_path = os.path.join(engine_dir, TRAINED_ENGINE_FILENAME)
         archive_path = os.path.join(engine_dir, 'assistant.zip')
 
@@ -32,9 +44,5 @@ def get_trained_nlu_engine(dataset, engine_class):
             zf.write(trained_engine_path, arcname=TRAINED_ENGINE_FILENAME)
         with io.open(archive_path, mode='rb') as f:
             data_zip = bytearray(f.read())
-    except Exception as e:
-        raise Exception("Error while creating engine from zip archive: %s"
-                        % e.message)
-    finally:
-        shutil.rmtree(engine_dir)
-    return RustNLUEngine(language, data_zip=data_zip)
+
+    return inference_engine_class(language, data_zip=data_zip)

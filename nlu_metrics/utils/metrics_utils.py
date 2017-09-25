@@ -2,10 +2,7 @@ from __future__ import unicode_literals
 
 from copy import deepcopy
 
-from snips_nlu.builtin_entities import is_builtin_entity
-from snips_nlu.constants import (INTENTS, UTTERANCES, ENGINE_TYPE,
-                                 CUSTOM_ENGINE, DATA, SLOT_NAME, TEXT)
-
+from constants import INTENTS, UTTERANCES, DATA, SLOT_NAME, TEXT
 from nlu_metrics.utils.dataset_utils import (input_string_from_chunks,
                                              get_stratified_utterances)
 
@@ -47,8 +44,8 @@ def create_k_fold_batches(dataset, k, max_training_utterances=None, seed=None):
         for intent_name, utterance in train_utterances:
             if intent_name not in train_dataset[INTENTS]:
                 train_dataset[INTENTS][intent_name] = {
-                    ENGINE_TYPE: CUSTOM_ENGINE,
-                    UTTERANCES: []
+                    UTTERANCES: [],
+                    "engineType": "regex"
                 }
             train_dataset[INTENTS][intent_name][UTTERANCES].append(
                 deepcopy(utterance))
@@ -188,3 +185,7 @@ def _compute_precision_recall(count_metrics):
         "precision": 0. if tp == 0 else float(tp) / float(tp + fp),
         "recall": 0. if tp == 0 else float(tp) / float(tp + fn),
     }
+
+
+def is_builtin_entity(entity_name):
+    return entity_name.startswith("snips/")
