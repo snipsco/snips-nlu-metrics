@@ -34,10 +34,28 @@ This API lets you train the model on a specific dataset and compute metrics anot
 ```python
 from nlu_metrics import compute_train_test_metrics
 
+class DumbTrainingEngine(object):
+    def __init__(self, language):
+        self.language = language
+
+    def fit(self, dataset):
+        pass
+
+    def to_dict(self):
+        return dict()
+
+
+class DumbInferenceEngine(object):
+    def __init__(self, language, data_zip):
+        pass
+
+    def parse(self, text):
+        return {"text": text, "intent": None, "slots": None}
+
 metrics = compute_train_test_metrics(train_dataset="path/to/train_dataset.json", 
                                      test_dataset="path/to/test_dataset.json",
-                                     snips_nlu_version="0.8.18",
-                                     snips_nlu_rust_version="0.25.2",
+                                     training_engine_class=DumbTrainingEngine,
+                                     inference_engine_class=DumbInferenceEngine,
                                      verbose=True)
 ```
 
@@ -48,15 +66,16 @@ metrics = compute_train_test_metrics(train_dataset="path/to/train_dataset.json",
 
 ### Cross validation metrics
 
-This API lets you compute metrics on a dataset using cross validation:
+This API lets you compute metrics on a dataset using cross validation, here is how you can use (provided you have installed `snips_nlu` and `snips_nlu_rust`):
 
 ```python
 from nlu_metrics import compute_cross_val_metrics
+from snips_nlu import SnipsNLUEngine
+from snips_nlu_rust import NLUEngine as RustNLUEngine
 
 metrics = compute_cross_val_metrics(dataset="path/to/dataset.json",
-                                    snips_nlu_version="0.8.18",
-                                    snips_nlu_rust_version="0.25.2",
-                                    training_engine_class=None,
+                                    training_engine_class=SnipsNLUEngine,
+                                    inference_engine_class=RustNLUEngine,
                                     nb_folds=5,
                                     training_utterances=50)
 ```

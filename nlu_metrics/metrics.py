@@ -59,20 +59,12 @@ def compute_cross_val_metrics(
     global_metrics = dict()
 
     for batch_index, (train_dataset, test_utterances) in enumerate(batches):
-        try:
-            language = train_dataset["language"]
-            trained_engine = get_trained_engine(train_dataset,
-                                                training_engine_class)
-            inference_engine = get_inference_engine(language,
-                                                    trained_engine.to_dict(),
-                                                    inference_engine_class)
-        except Exception as e:
-            print("Skipping group because of training error: %s" % e.message)
-            return {
-                "config": metrics_config,
-                "training_info": "training error: '%s'" % e.message,
-                "metrics": None
-            }
+        language = train_dataset["language"]
+        trained_engine = get_trained_engine(train_dataset,
+                                            training_engine_class)
+        inference_engine = get_inference_engine(language,
+                                                trained_engine.to_dict(),
+                                                inference_engine_class)
         batch_metrics = compute_engine_metrics(inference_engine,
                                                test_utterances)
         global_metrics = aggregate_metrics(global_metrics, batch_metrics)

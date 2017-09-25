@@ -44,7 +44,8 @@ def create_k_fold_batches(dataset, k, max_training_utterances=None, seed=None):
         for intent_name, utterance in train_utterances:
             if intent_name not in train_dataset[INTENTS]:
                 train_dataset[INTENTS][intent_name] = {
-                    UTTERANCES: []
+                    UTTERANCES: [],
+                    "engineType": "regex"
                 }
             train_dataset[INTENTS][intent_name][UTTERANCES].append(
                 deepcopy(utterance))
