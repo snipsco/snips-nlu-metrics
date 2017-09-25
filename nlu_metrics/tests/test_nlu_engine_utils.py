@@ -2,20 +2,20 @@ from __future__ import unicode_literals
 
 import unittest
 
-from snips_nlu import SnipsNLUEngine
-
-from nlu_metrics.utils.nlu_engine_utils import get_trained_nlu_engine
+from nlu_metrics.utils.nlu_engine_utils import get_inference_engine, \
+    get_trained_engine
 
 
 class TestNLUEngineUtils(unittest.TestCase):
-    def test_should_use_provided_training_class(self):
+    def test_get_trained_engine_should_use_provided_engine_class(self):
         # Given
-        class TestNLUEngine(SnipsNLUEngine):
-            fit_calls = 0
+        class TestTrainingEngine(object):
+            def __init__(self, language):
+                self.language = language
+                self.fitted = False
 
             def fit(self, dataset, intents=None):
-                TestNLUEngine.fit_calls += 1
-                super(TestNLUEngine, self).fit(dataset, intents)
+                self.fitted = True
 
         _dataset = {
             "language": "en",
@@ -50,7 +50,21 @@ class TestNLUEngineUtils(unittest.TestCase):
         }
 
         # When
-        get_trained_nlu_engine(_dataset, TestNLUEngine)
+        engine = get_trained_engine(_dataset, TestTrainingEngine)
 
         # Then
-        self.assertGreater(TestNLUEngine.fit_calls, 0)
+        self.assertTrue(engine.fitted, 1)
+        self.assertEquals(engine.language, "en")
+
+    def test_get_inference_engine_should_use_provided_engine_class(self):
+        # Given
+        class TestInferenceEngine(object):
+            def __init__(self, language, data_zip):
+                self.language = language
+
+        # When
+        inference_engine = get_inference_engine("en", dict(),
+                                                TestInferenceEngine)
+
+        # Then
+        self.assertEquals(inference_engine.language, "en")

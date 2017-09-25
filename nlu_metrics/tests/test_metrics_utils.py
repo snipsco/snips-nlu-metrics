@@ -2,8 +2,6 @@ from __future__ import unicode_literals
 
 import unittest
 
-from snips_nlu.constants import DATA, TEXT, ENTITY, SLOT_NAME
-
 from nlu_metrics.utils.metrics_utils import (aggregate_metrics,
                                              compute_utterance_metrics,
                                              compute_precision_recall)
@@ -35,7 +33,7 @@ class TestMetricsUtils(unittest.TestCase):
                 }
             ]
         }
-        utterance = {DATA: [{TEXT: text}]}
+        utterance = {"data": [{"text": text}]}
         intent_name = "intent1"
         # When
         metrics = compute_utterance_metrics(parsing, utterance, intent_name)
@@ -94,22 +92,22 @@ class TestMetricsUtils(unittest.TestCase):
             ]
         }
         utterance = {
-            DATA: [
+            "data": [
                 {
-                    TEXT: "this is intent1 with "
+                    "text": "this is intent1 with "
                 },
                 {
-                    TEXT: "slot1_value",
-                    ENTITY: "entity1",
-                    SLOT_NAME: "slot1"
+                    "text": "slot1_value",
+                    "entity": "entity1",
+                    "slot_name": "slot1"
                 },
                 {
-                    TEXT: " and "
+                    "text": " and "
                 },
                 {
-                    TEXT: "slot2_value",
-                    ENTITY: "entity2",
-                    SLOT_NAME: "slot2"
+                    "text": "slot2_value",
+                    "entity": "entity2",
+                    "slot_name": "slot2"
                 }
             ]
         }

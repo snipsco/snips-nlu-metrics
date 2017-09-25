@@ -2,7 +2,7 @@ from __future__ import unicode_literals
 
 import random
 
-from snips_nlu.constants import TEXT, INTENTS, UTTERANCES
+from constants import TEXT, UTTERANCES, INTENTS
 
 
 def input_string_from_chunks(chunks):
@@ -34,7 +34,7 @@ def create_nlu_dataset(registry_intents):
     nlu_dataset = {
         "language": language,
         "snips_nlu_version": "0.1.0",
-        "intents": {
+        INTENTS: {
             intent["config"]["displayName"]: {
                 "engineType": "regex",
                 "utterances": intent["customIntentData"]["utterances"]
