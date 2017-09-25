@@ -32,6 +32,8 @@ def compute_cross_val_metrics(
 
     """
 
+    assert 0.0 <= train_size_ratio <= 1.0
+
     metrics_config = {
         "nb_folds": nb_folds,
         "train_size_ratio": train_size_ratio
