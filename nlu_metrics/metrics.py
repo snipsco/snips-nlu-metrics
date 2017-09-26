@@ -118,9 +118,6 @@ def compute_train_test_metrics(
         testing
     :param training_engine_class: python class to use for training
     :param inference_engine_class: python class to use for inference
-    :param training_engine_class: SnipsNLUEngine class, if `None` then the
-        engine used for training is created with the specified
-        `snips_nlu_version`
     :param use_asr_output: bool (optional), whether the asr output should be
         used instead of utterance text
     :param slot_matching_lambda: lambda lhs_slot, rhs_slot: bool (optional),
