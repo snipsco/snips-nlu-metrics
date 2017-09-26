@@ -2,7 +2,8 @@ from __future__ import unicode_literals
 
 from copy import deepcopy
 
-from constants import INTENTS, UTTERANCES, DATA, SLOT_NAME, TEXT, ASR_OUTPUT
+from constants import INTENTS, UTTERANCES, DATA, SLOT_NAME, TEXT, ASR_OUTPUT, \
+    FALSE_POSITIVE, FALSE_NEGATIVE, ENTITY, RANGE
 from nlu_metrics.utils.dataset_utils import (input_string_from_chunks,
                                              get_stratified_utterances,
                                              get_utterances_subset)
@@ -56,8 +57,9 @@ def create_k_fold_batches(dataset, k, train_size_ratio=1.0, seed=None):
 
 
 def compute_engine_metrics(engine, test_utterances, use_asr_output,
-                           slot_matching_lambda, verbose=False):
+                           slot_matching_lambda):
     metrics = dict()
+    errors = []
     for intent_name, utterance in test_utterances:
         if use_asr_output:
             input_string = utterance[ASR_OUTPUT]
@@ -65,13 +67,19 @@ def compute_engine_metrics(engine, test_utterances, use_asr_output,
             input_string = input_string_from_chunks(utterance[DATA])
         parsing = engine.parse(input_string)
         utterance_metrics = compute_utterance_metrics(
-            parsing, utterance, intent_name, slot_matching_lambda, verbose)
+            parsing, utterance, intent_name, slot_matching_lambda)
+        if contains_errors(utterance_metrics):
+            errors.append({
+                "nlu_output": parsing,
+                "expected_output": format_expected_output(intent_name,
+                                                          utterance)
+            })
         metrics = aggregate_metrics(metrics, utterance_metrics)
-    return metrics
+    return metrics, errors
 
 
 def compute_utterance_metrics(parsing, utterance, utterance_intent,
-                              slot_matching_lambda, verbose=False):
+                              slot_matching_lambda):
     if parsing["intent"] is not None:
         parsing_intent_name = parsing["intent"]["intentName"]
     else:
@@ -102,18 +110,6 @@ def compute_utterance_metrics(parsing, utterance, utterance_intent,
     else:
         metrics[parsing_intent_name]["intent"]["false_positive"] += 1
         metrics[utterance_intent]["intent"]["false_negative"] += 1
-        if verbose:
-            intent_proba = parsing["intent"]["probability"] \
-                if parsing["intent"] is not None else 0.0
-            print("INTENT PROBA: %s" % intent_proba)
-            print("Intent classification mismatch:\n"
-                  "\tinput:         \t\"{0}\"\n"
-                  "\tintent found:  \t{1} ({2:.0%})\n"
-                  "\tcorrect intent:\t{3}\n"
-                  .format(parsing["input"],
-                          parsing_intent_name,
-                          intent_proba,
-                          utterance_intent))
         return metrics
 
     # Check if expected slots have been parsed
@@ -125,12 +121,6 @@ def compute_utterance_metrics(parsing, utterance, utterance_intent,
             slot_metrics["true_positive"] += 1
         else:
             slot_metrics["false_negative"] += 1
-            if verbose:
-                print("Slot filling mismatch (missing slot):\n"
-                      "\tINPUT:     \t\"{0}\"\n"
-                      "\tSLOT:      \t{1}\n"
-                      "\tSLOT VALUE:\t\"{2}\"\n"
-                      .format(parsing["input"], slot_name, slot[TEXT]))
 
     # Check if there are unexpected parsed slots
     for slot in parsed_slots:
@@ -139,13 +129,6 @@ def compute_utterance_metrics(parsing, utterance, utterance_intent,
         if all(s[SLOT_NAME] != slot_name or not slot_matching_lambda(
                 s[TEXT], slot["rawValue"]) for s in utterance_slots):
             slot_metrics["false_positive"] += 1
-            if verbose:
-                print("Slot filling mismatch (unexpected slot):\n"
-                      "\tINPUT:     \t\"{0}\"\n"
-                      "\tSLOT:      \t{1}\n"
-                      "\tSLOT VALUE:\t\"{2}\"\n"
-                      .format(parsing["input"], slot_name, slot["rawValue"]))
-
     return metrics
 
 
@@ -192,6 +175,39 @@ def _compute_precision_recall(count_metrics):
     return {
         "precision": 0. if tp == 0 else float(tp) / float(tp + fp),
         "recall": 0. if tp == 0 else float(tp) / float(tp + fn),
+    }
+
+
+def contains_errors(utterance_metrics):
+    for metrics in utterance_metrics.values():
+        intent_metrics = metrics["intent"]
+        if intent_metrics.get(FALSE_POSITIVE, 0) > 0:
+            return True
+        if intent_metrics.get(FALSE_NEGATIVE, 0) > 0:
+            return True
+        for slot_metrics in metrics["slots"].values():
+            if slot_metrics.get(FALSE_POSITIVE, 0) > 0:
+                return True
+            if slot_metrics.get(FALSE_NEGATIVE, 0) > 0:
+                return True
+    return False
+
+
+def format_expected_output(intent_name, utterance):
+    return {
+        "input": "".join(chunk[TEXT] for chunk in utterance[DATA]),
+        "intent": {
+            "intentName": intent_name,
+            "probability": 1.0
+        },
+        "slots": [
+            {
+                "rawValue": chunk[TEXT],
+                "entity": chunk[ENTITY],
+                "slotName": chunk[SLOT_NAME],
+                "range": chunk[RANGE]
+            } for chunk in utterance[DATA] if ENTITY in chunk
+        ]
     }
 
 

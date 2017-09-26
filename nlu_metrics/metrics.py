@@ -76,6 +76,7 @@ def compute_cross_val_metrics(
         }
     global_metrics = dict()
 
+    global_errors = []
     for batch_index, (train_dataset, test_utterances) in enumerate(batches):
         language = train_dataset["language"]
         trained_engine = get_trained_engine(train_dataset,
@@ -83,10 +84,11 @@ def compute_cross_val_metrics(
         inference_engine = get_inference_engine(language,
                                                 trained_engine.to_dict(),
                                                 inference_engine_class)
-        batch_metrics = compute_engine_metrics(
+        batch_metrics, errors = compute_engine_metrics(
             inference_engine, test_utterances, use_asr_output,
             slot_matching_lambda)
         global_metrics = aggregate_metrics(global_metrics, batch_metrics)
+        global_errors += errors
 
     global_metrics = compute_precision_recall(global_metrics)
 
@@ -95,7 +97,8 @@ def compute_cross_val_metrics(
 
     return {
         "config": metrics_config,
-        "metrics": global_metrics
+        "metrics": global_metrics,
+        "errors": global_errors
     }
 
 
@@ -105,8 +108,7 @@ def compute_train_test_metrics(
         training_engine_class,
         inference_engine_class,
         use_asr_output=False,
-        slot_matching_lambda=None,
-        verbose=False):
+        slot_matching_lambda=None):
     """Compute the main NLU metrics on `test_dataset` after having trained on
     `train_dataset`
 
@@ -124,7 +126,6 @@ def compute_train_test_metrics(
     :param slot_matching_lambda: lambda lhs_slot, rhs_slot: bool (optional),
         if defined, this function will be use to match slots when computing
         metrics, otherwise exact match will be used
-    :param verbose: if `True` it will print prediction errors
     :return: dict containing the metrics
     """
     if isinstance(train_dataset, (str, unicode)):
@@ -144,8 +145,7 @@ def compute_train_test_metrics(
                                             inference_engine_class)
     utterances = get_stratified_utterances(test_dataset, seed=None,
                                            shuffle=False)
-    metrics = compute_engine_metrics(
-        inference_engine, utterances, use_asr_output, slot_matching_lambda,
-        verbose)
+    metrics, errors = compute_engine_metrics(
+        inference_engine, utterances, use_asr_output, slot_matching_lambda)
     metrics = compute_precision_recall(metrics)
-    return {"metrics": metrics}
+    return {"metrics": metrics, "errors": errors}
