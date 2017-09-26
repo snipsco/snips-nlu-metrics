@@ -4,7 +4,8 @@ import unittest
 
 from nlu_metrics.utils.metrics_utils import (aggregate_metrics,
                                              compute_utterance_metrics,
-                                             compute_precision_recall)
+                                             compute_precision_recall,
+                                             exact_match)
 
 
 class TestMetricsUtils(unittest.TestCase):
@@ -36,7 +37,8 @@ class TestMetricsUtils(unittest.TestCase):
         utterance = {"data": [{"text": text}]}
         intent_name = "intent1"
         # When
-        metrics = compute_utterance_metrics(parsing, utterance, intent_name)
+        metrics = compute_utterance_metrics(parsing, utterance, intent_name,
+                                            exact_match)
         # Then
         expected_metrics = {
             "intent1": {
@@ -112,7 +114,86 @@ class TestMetricsUtils(unittest.TestCase):
             ]
         }
         # When
-        metrics = compute_utterance_metrics(parsing, utterance, intent_name)
+        metrics = compute_utterance_metrics(parsing, utterance, intent_name,
+                                            exact_match)
+        # Then
+        expected_metrics = {
+            "intent1": {
+                "intent": {
+                    "false_negative": 0,
+                    "false_positive": 0,
+                    "true_positive": 1
+                },
+                "slots": {
+                    "slot1": {
+                        "false_negative": 0,
+                        "false_positive": 0,
+                        "true_positive": 1
+                    },
+                    "slot2": {
+                        "false_negative": 1,
+                        "false_positive": 0,
+                        "true_positive": 0
+                    }
+                }
+            }
+        }
+
+        self.assertDictEqual(expected_metrics, metrics)
+
+    def test_should_use_slot_matching_lambda_to_compute_metrics(self):
+        # Given
+        text = "this is intent1 with slot1_value and slot2_value"
+        intent_name = "intent1"
+        parsing = {
+            "text": text,
+            "intent": {
+                "intentName": intent_name,
+                "probability": 0.32
+            },
+            "slots": [
+                {
+                    "rawValue": "slot1_value",
+                    "value": {
+                        "kind": "Custom",
+                        "value": "slot1_value"
+                    },
+                    "range": {
+                        "start": 21,
+                        "end": 32
+                    },
+                    "entity": "entity1",
+                    "slotName": "slot1"
+                }
+            ]
+        }
+        utterance = {
+            "data": [
+                {
+                    "text": "this is intent1 with "
+                },
+                {
+                    "text": "slot1_value2",
+                    "entity": "entity1",
+                    "slot_name": "slot1"
+                },
+                {
+                    "text": " and "
+                },
+                {
+                    "text": "slot2_value",
+                    "entity": "entity2",
+                    "slot_name": "slot2"
+                }
+            ]
+        }
+
+        def slot_matching_lambda(l, r):
+            return l.split("_")[0] == r.split("_")[0]
+
+        # When
+        metrics = compute_utterance_metrics(parsing, utterance, intent_name,
+                                            slot_matching_lambda)
         # Then
         expected_metrics = {
             "intent1": {

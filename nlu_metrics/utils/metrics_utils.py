@@ -2,7 +2,7 @@ from __future__ import unicode_literals
 
 from copy import deepcopy
 
-from constants import INTENTS, UTTERANCES, DATA, SLOT_NAME, TEXT
+from constants import INTENTS, UTTERANCES, DATA, SLOT_NAME, TEXT, ASR_OUTPUT
 from nlu_metrics.utils.dataset_utils import (input_string_from_chunks,
                                              get_stratified_utterances,
                                              get_utterances_subset)
@@ -55,19 +55,23 @@ def create_k_fold_batches(dataset, k, train_size_ratio=1.0, seed=None):
     return k_fold_batches
 
 
-def compute_engine_metrics(engine, test_utterances, verbose=False):
+def compute_engine_metrics(engine, test_utterances, use_asr_output,
+                           slot_matching_lambda, verbose=False):
     metrics = dict()
     for intent_name, utterance in test_utterances:
-        input_string = input_string_from_chunks(utterance[DATA])
+        if use_asr_output:
+            input_string = utterance[ASR_OUTPUT]
+        else:
+            input_string = input_string_from_chunks(utterance[DATA])
         parsing = engine.parse(input_string)
-        utterance_metrics = compute_utterance_metrics(parsing, utterance,
-                                                      intent_name, verbose)
+        utterance_metrics = compute_utterance_metrics(
+            parsing, utterance, intent_name, slot_matching_lambda, verbose)
         metrics = aggregate_metrics(metrics, utterance_metrics)
     return metrics
 
 
 def compute_utterance_metrics(parsing, utterance, utterance_intent,
-                              verbose=False):
+                              slot_matching_lambda, verbose=False):
     if parsing["intent"] is not None:
         parsing_intent_name = parsing["intent"]["intentName"]
     else:
@@ -112,11 +116,12 @@ def compute_utterance_metrics(parsing, utterance, utterance_intent,
                           utterance_intent))
         return metrics
 
+    # Check if expected slots have been parsed
     for slot in utterance_slots:
         slot_name = slot[SLOT_NAME]
         slot_metrics = metrics[utterance_intent]["slots"][slot_name]
-        if any(s["slotName"] == slot_name and s["rawValue"] == slot[TEXT]
-               for s in parsed_slots):
+        if any(s["slotName"] == slot_name and slot_matching_lambda(
+                s["rawValue"], slot[TEXT]) for s in parsed_slots):
             slot_metrics["true_positive"] += 1
         else:
             slot_metrics["false_negative"] += 1
@@ -127,11 +132,12 @@ def compute_utterance_metrics(parsing, utterance, utterance_intent,
                       "\tSLOT VALUE:\t\"{2}\"\n"
                       .format(parsing["input"], slot_name, slot[TEXT]))
 
+    # Check if there are unexpected parsed slots
     for slot in parsed_slots:
         slot_name = slot["slotName"]
         slot_metrics = metrics[parsing_intent_name]["slots"][slot_name]
-        if all(s[SLOT_NAME] != slot_name or s[TEXT] != slot["rawValue"]
-               for s in utterance_slots):
+        if all(s[SLOT_NAME] != slot_name or not slot_matching_lambda(
+                s[TEXT], slot["rawValue"]) for s in utterance_slots):
             slot_metrics["false_positive"] += 1
             if verbose:
                 print("Slot filling mismatch (unexpected slot):\n"
@@ -191,3 +197,7 @@ def _compute_precision_recall(count_metrics):
 
 def is_builtin_entity(entity_name):
     return entity_name.startswith("snips/")
+
+
+def exact_match(lhs_slot, rhs_slot):
+    return lhs_slot == rhs_slot
