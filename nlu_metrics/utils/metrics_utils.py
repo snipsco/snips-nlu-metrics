@@ -2,8 +2,8 @@ from __future__ import unicode_literals
 
 from copy import deepcopy
 
-from constants import INTENTS, UTTERANCES, DATA, SLOT_NAME, TEXT, ASR_OUTPUT, \
-    FALSE_POSITIVE, FALSE_NEGATIVE, ENTITY, RANGE
+from constants import (INTENTS, UTTERANCES, DATA, SLOT_NAME, TEXT,
+                       FALSE_POSITIVE, FALSE_NEGATIVE, ENTITY, RANGE)
 from nlu_metrics.utils.dataset_utils import (input_string_from_chunks,
                                              get_stratified_utterances,
                                              get_utterances_subset)
@@ -56,15 +56,11 @@ def create_k_fold_batches(dataset, k, train_size_ratio=1.0, seed=None):
     return k_fold_batches
 
 
-def compute_engine_metrics(engine, test_utterances, use_asr_output,
-                           slot_matching_lambda):
+def compute_engine_metrics(engine, test_utterances, slot_matching_lambda):
     metrics = dict()
     errors = []
     for intent_name, utterance in test_utterances:
-        if use_asr_output:
-            input_string = utterance[ASR_OUTPUT]
-        else:
-            input_string = input_string_from_chunks(utterance[DATA])
+        input_string = input_string_from_chunks(utterance[DATA])
         parsing = engine.parse(input_string)
         utterance_metrics = compute_utterance_metrics(
             parsing, utterance, intent_name, slot_matching_lambda)

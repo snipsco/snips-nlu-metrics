@@ -18,8 +18,8 @@ install_requires = []
 extras_require = {
     "test": [
         "mock==2.0.0",
-        "snips_nlu==0.8.16",
-        "snips_nlu_rust==0.25.2",
+        "snips_nlu==0.8.20",
+        "snips_nlu_rust==0.26.0",
     ]
 }
 

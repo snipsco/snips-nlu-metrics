@@ -1,13 +1,13 @@
+import io
 import json
+import os
 import unittest
 
-import io
-
-import os
 from snips_nlu import SnipsNLUEngine
 from snips_nlu_rust import NLUEngine as RustNLUEngine
 
-from nlu_metrics import compute_cross_val_metrics, compute_train_test_metrics
+from nlu_metrics import (compute_cross_val_metrics, compute_train_test_metrics,
+                         build_nlu_engine_class)
 
 
 class TestMetricsUtils(unittest.TestCase):
@@ -20,9 +20,10 @@ class TestMetricsUtils(unittest.TestCase):
 
         # When/Then
         try:
+            engine_class = build_nlu_engine_class(SnipsNLUEngine,
+                                                  RustNLUEngine)
             compute_cross_val_metrics(dataset=dataset,
-                                      training_engine_class=SnipsNLUEngine,
-                                      inference_engine_class=RustNLUEngine,
+                                      engine_class=engine_class,
                                       nb_folds=5)
         except Exception as e:
             self.fail(e.message)
@@ -36,9 +37,10 @@ class TestMetricsUtils(unittest.TestCase):
 
         # When/Then
         try:
+            engine_class = build_nlu_engine_class(SnipsNLUEngine,
+                                                  RustNLUEngine)
             compute_train_test_metrics(train_dataset=dataset,
                                        test_dataset=dataset,
-                                       training_engine_class=SnipsNLUEngine,
-                                       inference_engine_class=RustNLUEngine)
+                                       engine_class=engine_class)
         except Exception as e:
             self.fail(e.message)

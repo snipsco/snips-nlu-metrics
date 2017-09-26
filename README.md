@@ -27,75 +27,89 @@ pip install nlu_metrics
 
 ## Metrics API
 
+In order to compute metrics, you will need to implement an engine class that inherits from the following `Engine` abstract class:
+
+```python
+from abc import ABCMeta, abstractmethod
+
+class Engine(object):
+    """
+    Abstract class which represents an engine that can be used in the metrics
+    API. All engine classes must inherit from `Engine`.
+    """
+    __metaclass__ = ABCMeta
+
+    @abstractmethod
+    def __init__(self, language):
+        pass
+
+    @abstractmethod
+    def fit(self, dataset):
+        pass
+
+    @abstractmethod
+    def parse(self, text):
+        pass
+``` 
+
+If you intend to compute pure NLU metrics, you can use the following helper to build this engine class (provided you have install `snips_nlu` and `snips_nlu_rust` packages):
+
+```python
+from nlu_metrics import build_nlu_engine_class
+from snips_nlu import SnipsNLUEngine as NLUTrainingEngine
+from snips_nlu_rust import NLUEngine as NLUInferenceEngine
+
+engine_class = build_nlu_engine_class(NLUTrainingEngine, NLUInferenceEngine)
+```
+
+For more sophisticated use cases, you will have to create your own custom engine class.
+
 ### Train/Test metrics
 
 This API lets you train the model on a specific dataset and compute metrics another dataset:
 
 ```python
-from nlu_metrics import compute_train_test_metrics
+from nlu_metrics import compute_train_test_metrics, build_nlu_engine_class
+from snips_nlu import SnipsNLUEngine as NLUTrainingEngine
+from snips_nlu_rust import NLUEngine as NLUInferenceEngine
 
-class DumbTrainingEngine(object):
-    def __init__(self, language):
-        self.language = language
-
-    def fit(self, dataset):
-        pass
-
-    def to_dict(self):
-        return dict()
-
-
-class DumbInferenceEngine(object):
-    def __init__(self, language, data_zip):
-        pass
-
-    def parse(self, text):
-        return {"text": text, "intent": None, "slots": None}
-
+engine_class = build_nlu_engine_class(NLUTrainingEngine, NLUInferenceEngine)
 
 def prefix_match(lhs_slot, rhs_slot):
+    """Example of a custom slot matching function based on prefix"""
     return lhs_slot.startswith(rhs_slot) or rhs_slot.startswith(lhs_slot)
 
 metrics = compute_train_test_metrics(train_dataset="path/to/train_dataset.json", 
                                      test_dataset="path/to/test_dataset.json",
-                                     training_engine_class=DumbTrainingEngine,
-                                     inference_engine_class=DumbInferenceEngine,
-                                     use_asr_output=True,
+                                     engine_class=engine_class,
                                      slot_matching_lambda=prefix_match)
 ```
 
 - `train_dataset`: dataset to use for training
 - `test_dataset`: dataset to use for testing
-- `training_engine_class`: NLU engine class to use for training
-- `inference_engine_class`: NLU engine class to use for inference
-- `use_asr_output`: bool (optional), whether the asr output should be
-        used instead of utterance text
-- `slot_matching_lambda`: optional function that specify how to match two slots. By default an exact match is used.
-- `verbose` (optional): if `True`, will output some logs about the model errors.
+- `engine_class`: engine class to use for training and inference, must inherit from `Engine`
+- `slot_matching_lambda`: optional function that specifies how to match two slots. By default, exact match is used.
 
 ### Cross validation metrics
 
 This API lets you compute metrics on a dataset using cross validation, here is how you can use (provided you have installed `snips_nlu` and `snips_nlu_rust`):
 
 ```python
-from nlu_metrics import compute_cross_val_metrics
-from snips_nlu import SnipsNLUEngine
-from snips_nlu_rust import NLUEngine as RustNLUEngine
+from nlu_metrics import compute_cross_val_metrics, build_nlu_engine_class
+from snips_nlu import SnipsNLUEngine as NLUTrainingEngine
+from snips_nlu_rust import NLUEngine as NLUInferenceEngine
+
+engine_class = build_nlu_engine_class(NLUTrainingEngine, NLUInferenceEngine)
 
 metrics = compute_cross_val_metrics(dataset="path/to/dataset.json",
-                                    training_engine_class=SnipsNLUEngine,
-                                    inference_engine_class=RustNLUEngine,
+                                    engine_class=engine_class,
                                     nb_folds=5,
                                     train_size_ratio=0.5,
-                                    use_asr_output=False,
                                     slot_matching_lambda=None)
 ```
 
 - `dataset`: dataset to use during cross validation
-- `training_engine_class`: NLU engine class to use for training
-- `inference_engine_class`: NLU engine class to use for inference
+- `engine_class`: engine class to use for training and inference, must inherit from `Engine`
 - `nb_folds` (optional): number of folds to use, default to 5
 - `train_size_ratio` (optional): proportion of utterances to use per intent for training, default to 1.0
-- `use_asr_output`: bool (optional), whether the asr output should be
-        used instead of utterance text
-- `slot_matching_lambda`: optional function that specify how to match two slots. By default an exact match is used.
+- `slot_matching_lambda`: optional function that specifies how to match two slots. By default, exact match is used.
