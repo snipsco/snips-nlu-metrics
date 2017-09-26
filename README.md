@@ -59,9 +59,10 @@ metrics = compute_train_test_metrics(train_dataset="path/to/train_dataset.json",
                                      verbose=True)
 ```
 
-- `snips_nlu_version`: version of the training package
-- `snips_nlu_rust_version`: version of the inference package
-- `training_engine_class` (optional): specific NLU engine class to use for training
+- `train_dataset`: dataset to use for training
+- `test_dataset`: dataset to use for testing
+- `training_engine_class`: NLU engine class to use for training
+- `inference_engine_class`: NLU engine class to use for inference
 - `verbose` (optional): if `True`, will output some logs about the model errors.
 
 ### Cross validation metrics
@@ -77,10 +78,11 @@ metrics = compute_cross_val_metrics(dataset="path/to/dataset.json",
                                     training_engine_class=SnipsNLUEngine,
                                     inference_engine_class=RustNLUEngine,
                                     nb_folds=5,
-                                    training_utterances=50)
+                                    train_size_ratio=0.5)
 ```
-- `snips_nlu_version`: version of the training package
-- `snips_nlu_rust_version`: version of the inference package
-- `training_engine_class` (optional): specific NLU engine class to use for training
-- `max_utterances` (optional): max size of the training set, default to the size of the dataset
+
+- `dataset`: dataset to use during cross validation
+- `training_engine_class`: NLU engine class to use for training
+- `inference_engine_class`: NLU engine class to use for inference
 - `nb_folds` (optional): number of folds to use, default to 5
+- `train_size_ratio` (optional): proportion of utterances to use per intent for training, default to 1.0
