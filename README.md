@@ -61,8 +61,7 @@ metrics = compute_train_test_metrics(train_dataset="path/to/train_dataset.json",
                                      training_engine_class=DumbTrainingEngine,
                                      inference_engine_class=DumbInferenceEngine,
                                      use_asr_output=True,
-                                     slot_matching_lambda=prefix_match,
-                                     verbose=True)
+                                     slot_matching_lambda=prefix_match)
 ```
 
 - `train_dataset`: dataset to use for training
