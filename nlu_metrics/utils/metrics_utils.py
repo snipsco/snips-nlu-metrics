@@ -2,12 +2,11 @@ from __future__ import unicode_literals
 
 from copy import deepcopy
 
-from snips_nlu.builtin_entities import is_builtin_entity
-from snips_nlu.constants import (INTENTS, UTTERANCES, ENGINE_TYPE,
-                                 CUSTOM_ENGINE, DATA, SLOT_NAME, TEXT)
-
+from constants import INTENTS, UTTERANCES, DATA, SLOT_NAME, TEXT
 from nlu_metrics.utils.dataset_utils import (input_string_from_chunks,
-                                             get_stratified_utterances)
+                                             get_stratified_utterances,
+                                             get_utterances_subset)
+from nlu_metrics.utils.exception import NotEnoughDataError
 
 INITIAL_METRICS = {
     "true_positive": 0,
@@ -18,7 +17,7 @@ INITIAL_METRICS = {
 NONE_INTENT_NAME = "null"
 
 
-def create_k_fold_batches(dataset, k, max_training_utterances=None, seed=None):
+def create_k_fold_batches(dataset, k, train_size_ratio=1.0, seed=None):
     dataset = deepcopy(dataset)
     # Remove entity values in order to un-bias the cross validation
     for name, entity in dataset["entities"].iteritems():
@@ -27,28 +26,28 @@ def create_k_fold_batches(dataset, k, max_training_utterances=None, seed=None):
         if entity["automatically_extensible"]:
             entity["data"] = []
 
-    utterances = get_stratified_utterances(dataset, seed)
-    if len(utterances) < k:
-        raise AssertionError("The number of utterances ({0}) should be "
-                             "greater than the fold size ({1}) in order to "
-                             "compute metrics".format(len(utterances), k))
-    if max_training_utterances is None:
-        max_training_utterances = len(utterances)
+    utterances = get_stratified_utterances(dataset, seed, shuffle=True)
     k_fold_batches = []
     batch_size = len(utterances) / k
     for batch_index in xrange(k):
         test_start = batch_index * batch_size
         test_end = (batch_index + 1) * batch_size
         train_utterances = utterances[0:test_start] + utterances[test_end:]
-        train_utterances = train_utterances[0:max_training_utterances]
+        train_utterances = get_utterances_subset(train_utterances,
+                                                 train_size_ratio)
+        if len(train_utterances) == 0:
+            raise NotEnoughDataError("Not enough data given the other "
+                                     "parameters "
+                                     "(nb_folds=%s, train_size_ratio=%s)"
+                                     % (k, train_size_ratio))
         test_utterances = utterances[test_start: test_end]
         train_dataset = deepcopy(dataset)
         train_dataset[INTENTS] = dict()
         for intent_name, utterance in train_utterances:
             if intent_name not in train_dataset[INTENTS]:
                 train_dataset[INTENTS][intent_name] = {
-                    ENGINE_TYPE: CUSTOM_ENGINE,
-                    UTTERANCES: []
+                    UTTERANCES: [],
+                    "engineType": "regex"
                 }
             train_dataset[INTENTS][intent_name][UTTERANCES].append(
                 deepcopy(utterance))
@@ -188,3 +187,7 @@ def _compute_precision_recall(count_metrics):
         "precision": 0. if tp == 0 else float(tp) / float(tp + fp),
         "recall": 0. if tp == 0 else float(tp) / float(tp + fn),
     }
+
+
+def is_builtin_entity(entity_name):
+    return entity_name.startswith("snips/")
