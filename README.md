@@ -52,10 +52,16 @@ class DumbInferenceEngine(object):
     def parse(self, text):
         return {"text": text, "intent": None, "slots": None}
 
+
+def prefix_match(lhs_slot, rhs_slot):
+    return lhs_slot.startswith(rhs_slot) or rhs_slot.startswith(lhs_slot)
+
 metrics = compute_train_test_metrics(train_dataset="path/to/train_dataset.json", 
                                      test_dataset="path/to/test_dataset.json",
                                      training_engine_class=DumbTrainingEngine,
                                      inference_engine_class=DumbInferenceEngine,
+                                     use_asr_output=True,
+                                     slot_matching_lambda=prefix_match,
                                      verbose=True)
 ```
 
@@ -63,6 +69,9 @@ metrics = compute_train_test_metrics(train_dataset="path/to/train_dataset.json",
 - `test_dataset`: dataset to use for testing
 - `training_engine_class`: NLU engine class to use for training
 - `inference_engine_class`: NLU engine class to use for inference
+- `use_asr_output`: bool (optional), whether the asr output should be
+        used instead of utterance text
+- `slot_matching_lambda`: optional function that specify how to match two slots. By default an exact match is used.
 - `verbose` (optional): if `True`, will output some logs about the model errors.
 
 ### Cross validation metrics
@@ -78,7 +87,9 @@ metrics = compute_cross_val_metrics(dataset="path/to/dataset.json",
                                     training_engine_class=SnipsNLUEngine,
                                     inference_engine_class=RustNLUEngine,
                                     nb_folds=5,
-                                    train_size_ratio=0.5)
+                                    train_size_ratio=0.5,
+                                    use_asr_output=False,
+                                    slot_matching_lambda=None)
 ```
 
 - `dataset`: dataset to use during cross validation
@@ -86,3 +97,6 @@ metrics = compute_cross_val_metrics(dataset="path/to/dataset.json",
 - `inference_engine_class`: NLU engine class to use for inference
 - `nb_folds` (optional): number of folds to use, default to 5
 - `train_size_ratio` (optional): proportion of utterances to use per intent for training, default to 1.0
+- `use_asr_output`: bool (optional), whether the asr output should be
+        used instead of utterance text
+- `slot_matching_lambda`: optional function that specify how to match two slots. By default an exact match is used.

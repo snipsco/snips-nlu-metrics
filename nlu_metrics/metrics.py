@@ -8,7 +8,8 @@ from nlu_metrics.utils.exception import NotEnoughDataError
 from nlu_metrics.utils.metrics_utils import (create_k_fold_batches,
                                              compute_engine_metrics,
                                              aggregate_metrics,
-                                             compute_precision_recall)
+                                             compute_precision_recall,
+                                             exact_match)
 from nlu_metrics.utils.nlu_engine_utils import (get_inference_engine,
                                                 get_trained_engine)
 from nlu_metrics.utils.constants import INTENTS, UTTERANCES
@@ -19,7 +20,9 @@ def compute_cross_val_metrics(
         training_engine_class,
         inference_engine_class,
         nb_folds=5,
-        train_size_ratio=1.0):
+        train_size_ratio=1.0,
+        use_asr_output=False,
+        slot_matching_lambda=None):
     """Compute the main NLU metrics on the dataset using cross validation
 
     :param dataset: dict or str, dataset or path to dataset
@@ -28,11 +31,19 @@ def compute_cross_val_metrics(
     :param nb_folds: int, number of folds to use for cross validation
     :param train_size_ratio: float, ratio of intent utterances to use for
         training
+    :param use_asr_output: bool (optional), whether the asr output should be
+        used instead of utterance text
+    :param slot_matching_lambda: lambda lhs_slot, rhs_slot: bool (optional),
+        if defined, this function will be use to match slots when computing
+        metrics, otherwise exact match will be used
     :return: dict containing the metrics
 
     """
 
     assert 0.0 <= train_size_ratio <= 1.0
+
+    if slot_matching_lambda is None:
+        slot_matching_lambda = exact_match
 
     metrics_config = {
         "nb_folds": nb_folds,
@@ -72,8 +83,9 @@ def compute_cross_val_metrics(
         inference_engine = get_inference_engine(language,
                                                 trained_engine.to_dict(),
                                                 inference_engine_class)
-        batch_metrics = compute_engine_metrics(inference_engine,
-                                               test_utterances)
+        batch_metrics = compute_engine_metrics(
+            inference_engine, test_utterances, use_asr_output,
+            slot_matching_lambda)
         global_metrics = aggregate_metrics(global_metrics, batch_metrics)
 
     global_metrics = compute_precision_recall(global_metrics)
@@ -92,6 +104,8 @@ def compute_train_test_metrics(
         test_dataset,
         training_engine_class,
         inference_engine_class,
+        use_asr_output=False,
+        slot_matching_lambda=None,
         verbose=False):
     """Compute the main NLU metrics on `test_dataset` after having trained on
     `train_dataset`
@@ -105,6 +119,11 @@ def compute_train_test_metrics(
     :param training_engine_class: SnipsNLUEngine class, if `None` then the
         engine used for training is created with the specified
         `snips_nlu_version`
+    :param use_asr_output: bool (optional), whether the asr output should be
+        used instead of utterance text
+    :param slot_matching_lambda: lambda lhs_slot, rhs_slot: bool (optional),
+        if defined, this function will be use to match slots when computing
+        metrics, otherwise exact match will be used
     :param verbose: if `True` it will print prediction errors
     :return: dict containing the metrics
     """
@@ -116,12 +135,17 @@ def compute_train_test_metrics(
         with io.open(test_dataset, encoding="utf8") as f:
             test_dataset = json.load(f)
 
+    if slot_matching_lambda is None:
+        slot_matching_lambda = exact_match
+
     language = train_dataset["language"]
     trained_engine = get_trained_engine(train_dataset, training_engine_class)
     inference_engine = get_inference_engine(language, trained_engine.to_dict(),
                                             inference_engine_class)
     utterances = get_stratified_utterances(test_dataset, seed=None,
                                            shuffle=False)
-    metrics = compute_engine_metrics(inference_engine, utterances, verbose)
+    metrics = compute_engine_metrics(
+        inference_engine, utterances, use_asr_output, slot_matching_lambda,
+        verbose)
     metrics = compute_precision_recall(metrics)
     return {"metrics": metrics}
