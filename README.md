@@ -2,11 +2,9 @@
 
 [![Build Status](https://jenkins2.snips.ai/buildStatus/icon?job=SDK/asr-lm-adaptation/develop)](https://jenkins2.snips.ai/job/SDK/job/asr-lm-adaptation/view/Branches/job/develop)
 
-Python package to compute NLU metrics
+Python package to compute metrics on a NLU/ASR parsing pipeline
 
 ## Install
-Requirements: Python2.7, [pip](https://pip.pypa.io/en/stable/installing/)
-
 Create a `pip.conf` file with the following content (get user/password from @franblas): 
     
 ```config
@@ -52,21 +50,22 @@ class Engine(object):
         pass
 ``` 
 
-If you intend to compute pure NLU metrics, you can use the following helper to build this engine class (provided you have install `snips_nlu` and `snips_nlu_rust` packages):
+If you intend to compute pure NLU metrics, you can use the following helper to build this engine class (provided you have installed `snips_nlu` and `snips_nlu_rust` packages):
 
 ```python
 from nlu_metrics import build_nlu_engine_class
 from snips_nlu import SnipsNLUEngine as NLUTrainingEngine
 from snips_nlu_rust import NLUEngine as NLUInferenceEngine
 
-engine_class = build_nlu_engine_class(NLUTrainingEngine, NLUInferenceEngine)
+engine_class = build_nlu_engine_class(training_class=NLUTrainingEngine, 
+                                      inference_class=NLUInferenceEngine)
 ```
 
-For more sophisticated use cases, you will have to create your own custom engine class.
+For custom use cases, you will have to create your own custom engine class and make it inherit from `Engine`.
 
 ### Train/Test metrics
 
-This API lets you train the model on a specific dataset and compute metrics another dataset:
+This API lets you train the model on a specific dataset and compute metrics on another one:
 
 ```python
 from nlu_metrics import compute_train_test_metrics, build_nlu_engine_class
@@ -110,6 +109,6 @@ metrics = compute_cross_val_metrics(dataset="path/to/dataset.json",
 
 - `dataset`: dataset to use during cross validation
 - `engine_class`: engine class to use for training and inference, must inherit from `Engine`
-- `nb_folds` (optional): number of folds to use, default to 5
+- `nb_folds` (optional): number of folds to use during [cross validation](https://en.wikipedia.org/wiki/Cross-validation_(statistics)), default to 5
 - `train_size_ratio` (optional): proportion of utterances to use per intent for training, default to 1.0
 - `slot_matching_lambda`: optional function that specifies how to match two slots. By default, exact match is used.
