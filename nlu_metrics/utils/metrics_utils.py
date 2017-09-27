@@ -21,13 +21,6 @@ NONE_INTENT_NAME = "null"
 
 def create_k_fold_batches(dataset, k, train_size_ratio=1.0, seed=None):
     dataset = deepcopy(dataset)
-    # Remove entity values in order to un-bias the cross validation
-    for name, entity in dataset["entities"].iteritems():
-        if is_builtin_entity(name):
-            continue
-        if entity["automatically_extensible"]:
-            entity["data"] = []
-
     utterances = get_stratified_utterances(dataset, seed, shuffle=True)
     k_fold_batches = []
     batch_size = len(utterances) / k
