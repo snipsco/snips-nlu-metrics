@@ -3,7 +3,7 @@ from __future__ import unicode_literals
 from copy import deepcopy
 
 from constants import (INTENTS, UTTERANCES, DATA, SLOT_NAME, TEXT,
-                       FALSE_POSITIVE, FALSE_NEGATIVE, ENTITY, RANGE,
+                       FALSE_POSITIVE, FALSE_NEGATIVE, ENTITY,
                        TRUE_POSITIVE)
 from nlu_metrics.utils.dataset_utils import (input_string_from_chunks,
                                              get_stratified_utterances,
@@ -191,6 +191,13 @@ def contains_errors(utterance_metrics):
 
 
 def format_expected_output(intent_name, utterance):
+    char_index = 0
+    ranges = []
+    for chunk in utterance[DATA]:
+        range_end = char_index + len(chunk[TEXT])
+        ranges.append({"start": char_index, "end": range_end})
+        char_index = range_end
+
     return {
         "input": "".join(chunk[TEXT] for chunk in utterance[DATA]),
         "intent": {
@@ -202,8 +209,9 @@ def format_expected_output(intent_name, utterance):
                 "rawValue": chunk[TEXT],
                 "entity": chunk[ENTITY],
                 "slotName": chunk[SLOT_NAME],
-                "range": chunk[RANGE]
-            } for chunk in utterance[DATA] if ENTITY in chunk
+                "range": ranges[chunk_index]
+            } for chunk_index, chunk in enumerate(utterance[DATA])
+            if ENTITY in chunk
         ]
     }
 
