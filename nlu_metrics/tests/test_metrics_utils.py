@@ -19,11 +19,9 @@ class TestMetricsUtils(unittest.TestCase):
                 "data": [
                     {
                         "text": "this is an utterance with ",
-                        "range": {"start": 0, "end": 26}
                     },
                     {
                         "text": slot_value,
-                        "range": {"start": 26, "end": 26 + len(slot_value)},
                         "slot_name": slot_name,
                         "entity": slot_name
                     }
