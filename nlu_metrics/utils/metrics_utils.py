@@ -3,16 +3,17 @@ from __future__ import unicode_literals
 from copy import deepcopy
 
 from constants import (INTENTS, UTTERANCES, DATA, SLOT_NAME, TEXT,
-                       FALSE_POSITIVE, FALSE_NEGATIVE, ENTITY, RANGE)
+                       FALSE_POSITIVE, FALSE_NEGATIVE, ENTITY, RANGE,
+                       TRUE_POSITIVE)
 from nlu_metrics.utils.dataset_utils import (input_string_from_chunks,
                                              get_stratified_utterances,
                                              get_utterances_subset)
 from nlu_metrics.utils.exception import NotEnoughDataError
 
 INITIAL_METRICS = {
-    "true_positive": 0,
-    "false_positive": 0,
-    "false_negative": 0
+    TRUE_POSITIVE: 0,
+    FALSE_POSITIVE: 0,
+    FALSE_NEGATIVE: 0
 }
 
 NONE_INTENT_NAME = "null"
@@ -102,10 +103,10 @@ def compute_utterance_metrics(parsing, utterance, utterance_intent,
         metrics[intent_name]["slots"][slot_name] = deepcopy(INITIAL_METRICS)
 
     if parsing_intent_name == utterance_intent:
-        metrics[parsing_intent_name]["intent"]["true_positive"] += 1
+        metrics[parsing_intent_name]["intent"][TRUE_POSITIVE] += 1
     else:
-        metrics[parsing_intent_name]["intent"]["false_positive"] += 1
-        metrics[utterance_intent]["intent"]["false_negative"] += 1
+        metrics[parsing_intent_name]["intent"][FALSE_POSITIVE] += 1
+        metrics[utterance_intent]["intent"][FALSE_NEGATIVE] += 1
         return metrics
 
     # Check if expected slots have been parsed
@@ -114,9 +115,9 @@ def compute_utterance_metrics(parsing, utterance, utterance_intent,
         slot_metrics = metrics[utterance_intent]["slots"][slot_name]
         if any(s["slotName"] == slot_name and slot_matching_lambda(
                 s["rawValue"], slot[TEXT]) for s in parsed_slots):
-            slot_metrics["true_positive"] += 1
+            slot_metrics[TRUE_POSITIVE] += 1
         else:
-            slot_metrics["false_negative"] += 1
+            slot_metrics[FALSE_NEGATIVE] += 1
 
     # Check if there are unexpected parsed slots
     for slot in parsed_slots:
@@ -124,7 +125,7 @@ def compute_utterance_metrics(parsing, utterance, utterance_intent,
         slot_metrics = metrics[parsing_intent_name]["slots"][slot_name]
         if all(s[SLOT_NAME] != slot_name or not slot_matching_lambda(
                 s[TEXT], slot["rawValue"]) for s in utterance_slots):
-            slot_metrics["false_positive"] += 1
+            slot_metrics[FALSE_POSITIVE] += 1
     return metrics
 
 
@@ -148,9 +149,9 @@ def aggregate_metrics(lhs_metrics, rhs_metrics):
 
 def add_count_metrics(lhs, rhs):
     return {
-        "true_positive": lhs["true_positive"] + rhs["true_positive"],
-        "false_positive": lhs["false_positive"] + rhs["false_positive"],
-        "false_negative": lhs["false_negative"] + rhs["false_negative"],
+        TRUE_POSITIVE: lhs[TRUE_POSITIVE] + rhs[TRUE_POSITIVE],
+        FALSE_POSITIVE: lhs[FALSE_POSITIVE] + rhs[FALSE_POSITIVE],
+        FALSE_NEGATIVE: lhs[FALSE_NEGATIVE] + rhs[FALSE_NEGATIVE],
     }
 
 
@@ -165,9 +166,9 @@ def compute_precision_recall(metrics):
 
 
 def _compute_precision_recall(count_metrics):
-    tp = count_metrics["true_positive"]
-    fp = count_metrics["false_positive"]
-    fn = count_metrics["false_negative"]
+    tp = count_metrics[TRUE_POSITIVE]
+    fp = count_metrics[FALSE_POSITIVE]
+    fn = count_metrics[FALSE_NEGATIVE]
     return {
         "precision": 0. if tp == 0 else float(tp) / float(tp + fp),
         "recall": 0. if tp == 0 else float(tp) / float(tp + fn),

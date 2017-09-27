@@ -23,9 +23,36 @@ virtualenv venv
 pip install nlu_metrics
 ```
 
-## Metrics API
+## Pure NLU Metrics API
 
-In order to compute metrics, you will need to implement an engine class that inherits from the following `Engine` abstract class:
+```python
+from nlu_metrics import compute_train_test_nlu_metrics, compute_cross_val_nlu_metrics
+from snips_nlu import SnipsNLUEngine as NLUTrainingEngine
+from snips_nlu_rust import NLUEngine as NLUInferenceEngine
+
+
+def prefix_match(lhs_slot, rhs_slot):
+    """Example of a custom slot matching function based on prefix"""
+    return lhs_slot.startswith(rhs_slot) or rhs_slot.startswith(lhs_slot)
+
+tt_metrics = compute_train_test_nlu_metrics(train_dataset="path/to/train_dataset.json", 
+                                            test_dataset="path/to/test_dataset.json",
+                                            training_engine_class=NLUTrainingEngine, 
+                                            inference_engine_class=NLUInferenceEngine,
+                                            slot_matching_lambda=prefix_match)
+
+cv_metrics = compute_cross_val_nlu_metrics(dataset="path/to/dataset.json", 
+                                           training_engine_class=NLUTrainingEngine,
+                                           inference_engine_class=NLUInferenceEngine, 
+                                           nb_folds=5, 
+                                           train_size_ratio=0.5,
+                                           slot_matching_lambda=None)
+```
+
+## End-to-End Metrics API
+
+The metrics API lets you compute metrics on a full end-to-end ASR + NLU pipeline.
+To do that, you will need to implement an engine class that inherits from the following `Engine` abstract class:
 
 ```python
 from abc import ABCMeta, abstractmethod
@@ -50,65 +77,20 @@ class Engine(object):
         pass
 ``` 
 
-If you intend to compute pure NLU metrics, you can use the following helper to build this engine class (provided you have installed `snips_nlu` and `snips_nlu_rust` packages):
+Here is how you can use the end-to-end metrics API, if you have a `EndToEndEngine` that inherits from `Engine`:
 
 ```python
-from nlu_metrics import build_nlu_engine_class
-from snips_nlu import SnipsNLUEngine as NLUTrainingEngine
-from snips_nlu_rust import NLUEngine as NLUInferenceEngine
+from nlu_metrics import compute_train_test_metrics, compute_cross_val_metrics
 
-engine_class = build_nlu_engine_class(training_class=NLUTrainingEngine, 
-                                      inference_class=NLUInferenceEngine)
+
+tt_metrics = compute_train_test_metrics(train_dataset="path/to/train_dataset.json", 
+                                        test_dataset="path/to/test_dataset.json",
+                                        engine_class=EndToEndEngine,
+                                        slot_matching_lambda=None)
+
+cv_metrics = compute_cross_val_metrics(dataset="path/to/dataset.json", 
+                                       engine_class=EndToEndEngine, 
+                                       nb_folds=5, 
+                                       train_size_ratio=0.5,
+                                       slot_matching_lambda=None)
 ```
-
-For custom use cases, you will have to create your own custom engine class and make it inherit from `Engine`.
-
-### Train/Test metrics
-
-This API lets you train the model on a specific dataset and compute metrics on another one:
-
-```python
-from nlu_metrics import compute_train_test_metrics, build_nlu_engine_class
-from snips_nlu import SnipsNLUEngine as NLUTrainingEngine
-from snips_nlu_rust import NLUEngine as NLUInferenceEngine
-
-engine_class = build_nlu_engine_class(NLUTrainingEngine, NLUInferenceEngine)
-
-def prefix_match(lhs_slot, rhs_slot):
-    """Example of a custom slot matching function based on prefix"""
-    return lhs_slot.startswith(rhs_slot) or rhs_slot.startswith(lhs_slot)
-
-metrics = compute_train_test_metrics(train_dataset="path/to/train_dataset.json", 
-                                     test_dataset="path/to/test_dataset.json",
-                                     engine_class=engine_class,
-                                     slot_matching_lambda=prefix_match)
-```
-
-- `train_dataset`: dataset to use for training
-- `test_dataset`: dataset to use for testing
-- `engine_class`: engine class to use for training and inference, must inherit from `Engine`
-- `slot_matching_lambda`: optional function that specifies how to match two slots. By default, exact match is used.
-
-### Cross validation metrics
-
-This API lets you compute metrics on a dataset using cross validation, here is how you can use (provided you have installed `snips_nlu` and `snips_nlu_rust`):
-
-```python
-from nlu_metrics import compute_cross_val_metrics, build_nlu_engine_class
-from snips_nlu import SnipsNLUEngine as NLUTrainingEngine
-from snips_nlu_rust import NLUEngine as NLUInferenceEngine
-
-engine_class = build_nlu_engine_class(NLUTrainingEngine, NLUInferenceEngine)
-
-metrics = compute_cross_val_metrics(dataset="path/to/dataset.json",
-                                    engine_class=engine_class,
-                                    nb_folds=5,
-                                    train_size_ratio=0.5,
-                                    slot_matching_lambda=None)
-```
-
-- `dataset`: dataset to use during cross validation
-- `engine_class`: engine class to use for training and inference, must inherit from `Engine`
-- `nb_folds` (optional): number of folds to use during [cross validation](https://en.wikipedia.org/wiki/Cross-validation_(statistics)), default to 5
-- `train_size_ratio` (optional): proportion of utterances to use per intent for training, default to 1.0
-- `slot_matching_lambda`: optional function that specifies how to match two slots. By default, exact match is used.

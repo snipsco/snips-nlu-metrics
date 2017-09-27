@@ -3,7 +3,7 @@ from __future__ import unicode_literals
 import io
 import json
 
-from nlu_metrics.engine import Engine
+from nlu_metrics.engine import Engine, build_nlu_engine_class
 from nlu_metrics.utils.constants import INTENTS, UTTERANCES
 from nlu_metrics.utils.dataset_utils import get_stratified_utterances
 from nlu_metrics.utils.exception import NotEnoughDataError
@@ -14,12 +14,41 @@ from nlu_metrics.utils.metrics_utils import (create_k_fold_batches,
                                              exact_match)
 
 
+def compute_cross_val_nlu_metrics(dataset, training_engine_class,
+                                  inference_engine_class, nb_folds=5,
+                                  train_size_ratio=1.0,
+                                  slot_matching_lambda=None):
+    """Compute pure NLU metrics on the dataset using cross validation
+
+        :param dataset: dict or str, dataset or path to dataset
+        :param training_engine_class: python class to use for training
+        :param inference_engine_class: python class to use for inference
+        :param nb_folds: int, number of folds to use for cross validation
+        :param train_size_ratio: float, ratio of intent utterances to use for
+            training
+        :param slot_matching_lambda: lambda lhs_slot, rhs_slot: bool (optional),
+            if defined, this function will be use to match slots when computing
+            metrics, otherwise exact match will be used
+        :return: dict containing the following data
+
+            - "config": the config use to compute the metrics
+            - "metrics": the computed metrics
+            - "errors": the list of parsing errors
+
+        """
+    engine_class = build_nlu_engine_class(training_engine_class,
+                                          inference_engine_class)
+    return compute_cross_val_metrics(dataset, engine_class, nb_folds,
+                                     train_size_ratio, slot_matching_lambda)
+
+
 def compute_cross_val_metrics(dataset, engine_class, nb_folds=5,
                               train_size_ratio=1.0, slot_matching_lambda=None):
-    """Compute the main NLU metrics on the dataset using cross validation
+    """Compute end-to-end metrics on the dataset using cross validation
 
     :param dataset: dict or str, dataset or path to dataset
-    :param engine_class: python class to use for training and inference
+    :param engine_class: python class to use for training and inference, this
+        class must inherit from `Engine`
     :param nb_folds: int, number of folds to use for cross validation
     :param train_size_ratio: float, ratio of intent utterances to use for
         training
@@ -92,16 +121,44 @@ def compute_cross_val_metrics(dataset, engine_class, nb_folds=5,
     }
 
 
+def compute_train_test_nlu_metrics(train_dataset, test_dataset,
+                                   training_engine_class,
+                                   inference_engine_class,
+                                   slot_matching_lambda=None):
+    """Compute pure NLU metrics on `test_dataset` after having trained on
+        `train_dataset`
+
+        :param train_dataset: dict or str, dataset or path to dataset used for
+            training
+        :param test_dataset: dict or str, dataset or path to dataset used for
+            testing
+        :param training_engine_class: python class to use for training
+        :param inference_engine_class: python class to use for inference
+        :param slot_matching_lambda: lambda lhs_slot, rhs_slot: bool (optional),
+            if defined, this function will be use to match slots when computing
+            metrics, otherwise exact match will be used
+        :return: dict containing the following data
+
+            - "metrics": the computed metrics
+            - "errors": the list of parsing errors
+        """
+    engine_class = build_nlu_engine_class(training_engine_class,
+                                          inference_engine_class)
+    return compute_train_test_metrics(train_dataset, test_dataset,
+                                      engine_class, slot_matching_lambda)
+
+
 def compute_train_test_metrics(train_dataset, test_dataset, engine_class,
                                slot_matching_lambda=None):
-    """Compute the main NLU metrics on `test_dataset` after having trained on
+    """Compute end-to-end metrics on `test_dataset` after having trained on
     `train_dataset`
 
     :param train_dataset: dict or str, dataset or path to dataset used for
         training
     :param test_dataset: dict or str, dataset or path to dataset used for
         testing
-    :param engine_class: python class to use for training and inference
+    :param engine_class: python class to use for training and inference, this
+        class must inherit from `Engine`
     :param slot_matching_lambda: lambda lhs_slot, rhs_slot: bool (optional),
         if defined, this function will be use to match slots when computing
         metrics, otherwise exact match will be used
