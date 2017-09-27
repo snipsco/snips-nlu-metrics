@@ -7,8 +7,8 @@ from mock import patch
 from snips_nlu import SnipsNLUEngine
 from snips_nlu_rust import NLUEngine as RustNLUEngine
 
-from nlu_metrics import (compute_cross_val_metrics, compute_train_test_metrics,
-                         build_nlu_engine_class)
+from nlu_metrics import (compute_cross_val_metrics, compute_train_test_metrics)
+from nlu_metrics.engine import build_nlu_engine_class
 from nlu_metrics.metrics import compute_cross_val_nlu_metrics, \
     compute_train_test_nlu_metrics
 
