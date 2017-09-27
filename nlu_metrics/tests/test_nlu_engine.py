@@ -2,8 +2,7 @@ from __future__ import unicode_literals
 
 import unittest
 
-from nlu_metrics.utils.nlu_engine_utils import get_inference_engine, \
-    get_trained_engine
+from nlu_metrics.engine import get_trained_nlu_engine, get_inference_nlu_engine
 
 
 class TestNLUEngineUtils(unittest.TestCase):
@@ -14,7 +13,7 @@ class TestNLUEngineUtils(unittest.TestCase):
                 self.language = language
                 self.fitted = False
 
-            def fit(self, dataset, intents=None):
+            def fit(self, dataset):
                 self.fitted = True
 
         _dataset = {
@@ -50,7 +49,7 @@ class TestNLUEngineUtils(unittest.TestCase):
         }
 
         # When
-        engine = get_trained_engine(_dataset, TestTrainingEngine)
+        engine = get_trained_nlu_engine(_dataset, TestTrainingEngine)
 
         # Then
         self.assertTrue(engine.fitted, 1)
@@ -63,8 +62,8 @@ class TestNLUEngineUtils(unittest.TestCase):
                 self.language = language
 
         # When
-        inference_engine = get_inference_engine("en", dict(),
-                                                TestInferenceEngine)
+        inference_engine = get_inference_nlu_engine("en", dict(),
+                                                    TestInferenceEngine)
 
         # Then
         self.assertEquals(inference_engine.language, "en")

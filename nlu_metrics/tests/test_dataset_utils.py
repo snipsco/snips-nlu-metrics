@@ -2,8 +2,8 @@ from __future__ import unicode_literals
 
 import unittest
 
-from nlu_metrics.utils.dataset_utils import get_stratified_utterances, \
-    get_utterances_subset
+from nlu_metrics.utils.dataset_utils import (get_stratified_utterances,
+                                             get_utterances_subset)
 
 
 class TestDatasetUtils(unittest.TestCase):

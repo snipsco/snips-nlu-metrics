@@ -3,6 +3,8 @@ from __future__ import unicode_literals
 import io
 import json
 
+from nlu_metrics.engine import Engine, build_nlu_engine_class
+from nlu_metrics.utils.constants import INTENTS, UTTERANCES
 from nlu_metrics.utils.dataset_utils import get_stratified_utterances
 from nlu_metrics.utils.exception import NotEnoughDataError
 from nlu_metrics.utils.metrics_utils import (create_k_fold_batches,
@@ -10,33 +12,54 @@ from nlu_metrics.utils.metrics_utils import (create_k_fold_batches,
                                              aggregate_metrics,
                                              compute_precision_recall,
                                              exact_match)
-from nlu_metrics.utils.nlu_engine_utils import (get_inference_engine,
-                                                get_trained_engine)
-from nlu_metrics.utils.constants import INTENTS, UTTERANCES
 
 
-def compute_cross_val_metrics(
-        dataset,
-        training_engine_class,
-        inference_engine_class,
-        nb_folds=5,
-        train_size_ratio=1.0,
-        use_asr_output=False,
-        slot_matching_lambda=None):
-    """Compute the main NLU metrics on the dataset using cross validation
+def compute_cross_val_nlu_metrics(dataset, training_engine_class,
+                                  inference_engine_class, nb_folds=5,
+                                  train_size_ratio=1.0,
+                                  slot_matching_lambda=None):
+    """Compute pure NLU metrics on the dataset using cross validation
+
+        :param dataset: dict or str, dataset or path to dataset
+        :param training_engine_class: python class to use for training
+        :param inference_engine_class: python class to use for inference
+        :param nb_folds: int, number of folds to use for cross validation
+        :param train_size_ratio: float, ratio of intent utterances to use for
+            training
+        :param slot_matching_lambda: lambda lhs_slot, rhs_slot: bool (optional),
+            if defined, this function will be use to match slots when computing
+            metrics, otherwise exact match will be used
+        :return: dict containing the following data
+
+            - "config": the config use to compute the metrics
+            - "metrics": the computed metrics
+            - "errors": the list of parsing errors
+
+        """
+    engine_class = build_nlu_engine_class(training_engine_class,
+                                          inference_engine_class)
+    return compute_cross_val_metrics(dataset, engine_class, nb_folds,
+                                     train_size_ratio, slot_matching_lambda)
+
+
+def compute_cross_val_metrics(dataset, engine_class, nb_folds=5,
+                              train_size_ratio=1.0, slot_matching_lambda=None):
+    """Compute end-to-end metrics on the dataset using cross validation
 
     :param dataset: dict or str, dataset or path to dataset
-    :param training_engine_class: python class to use for training
-    :param inference_engine_class: python class to use for inference
+    :param engine_class: python class to use for training and inference, this
+        class must inherit from `Engine`
     :param nb_folds: int, number of folds to use for cross validation
     :param train_size_ratio: float, ratio of intent utterances to use for
         training
-    :param use_asr_output: bool (optional), whether the asr output should be
-        used instead of utterance text
     :param slot_matching_lambda: lambda lhs_slot, rhs_slot: bool (optional),
         if defined, this function will be use to match slots when computing
         metrics, otherwise exact match will be used
-    :return: dict containing the metrics
+    :return: dict containing the following data
+
+        - "config": the config use to compute the metrics
+        - "metrics": the computed metrics
+        - "errors": the list of parsing errors
 
     """
 
@@ -76,17 +99,15 @@ def compute_cross_val_metrics(
         }
     global_metrics = dict()
 
+    global_errors = []
     for batch_index, (train_dataset, test_utterances) in enumerate(batches):
         language = train_dataset["language"]
-        trained_engine = get_trained_engine(train_dataset,
-                                            training_engine_class)
-        inference_engine = get_inference_engine(language,
-                                                trained_engine.to_dict(),
-                                                inference_engine_class)
-        batch_metrics = compute_engine_metrics(
-            inference_engine, test_utterances, use_asr_output,
-            slot_matching_lambda)
+        engine = engine_class(language)
+        engine.fit(train_dataset)
+        batch_metrics, errors = compute_engine_metrics(engine, test_utterances,
+                                                       slot_matching_lambda)
         global_metrics = aggregate_metrics(global_metrics, batch_metrics)
+        global_errors += errors
 
     global_metrics = compute_precision_recall(global_metrics)
 
@@ -95,38 +116,60 @@ def compute_cross_val_metrics(
 
     return {
         "config": metrics_config,
-        "metrics": global_metrics
+        "metrics": global_metrics,
+        "errors": global_errors
     }
 
 
-def compute_train_test_metrics(
-        train_dataset,
-        test_dataset,
-        training_engine_class,
-        inference_engine_class,
-        use_asr_output=False,
-        slot_matching_lambda=None,
-        verbose=False):
-    """Compute the main NLU metrics on `test_dataset` after having trained on
+def compute_train_test_nlu_metrics(train_dataset, test_dataset,
+                                   training_engine_class,
+                                   inference_engine_class,
+                                   slot_matching_lambda=None):
+    """Compute pure NLU metrics on `test_dataset` after having trained on
+        `train_dataset`
+
+        :param train_dataset: dict or str, dataset or path to dataset used for
+            training
+        :param test_dataset: dict or str, dataset or path to dataset used for
+            testing
+        :param training_engine_class: python class to use for training
+        :param inference_engine_class: python class to use for inference
+        :param slot_matching_lambda: lambda lhs_slot, rhs_slot: bool (optional),
+            if defined, this function will be use to match slots when computing
+            metrics, otherwise exact match will be used
+        :return: dict containing the following data
+
+            - "metrics": the computed metrics
+            - "errors": the list of parsing errors
+        """
+    engine_class = build_nlu_engine_class(training_engine_class,
+                                          inference_engine_class)
+    return compute_train_test_metrics(train_dataset, test_dataset,
+                                      engine_class, slot_matching_lambda)
+
+
+def compute_train_test_metrics(train_dataset, test_dataset, engine_class,
+                               slot_matching_lambda=None):
+    """Compute end-to-end metrics on `test_dataset` after having trained on
     `train_dataset`
 
     :param train_dataset: dict or str, dataset or path to dataset used for
         training
     :param test_dataset: dict or str, dataset or path to dataset used for
         testing
-    :param training_engine_class: python class to use for training
-    :param inference_engine_class: python class to use for inference
-    :param training_engine_class: SnipsNLUEngine class, if `None` then the
-        engine used for training is created with the specified
-        `snips_nlu_version`
-    :param use_asr_output: bool (optional), whether the asr output should be
-        used instead of utterance text
+    :param engine_class: python class to use for training and inference, this
+        class must inherit from `Engine`
     :param slot_matching_lambda: lambda lhs_slot, rhs_slot: bool (optional),
         if defined, this function will be use to match slots when computing
         metrics, otherwise exact match will be used
-    :param verbose: if `True` it will print prediction errors
-    :return: dict containing the metrics
+    :return: dict containing the following data
+
+        - "metrics": the computed metrics
+        - "errors": the list of parsing errors
     """
+    if not issubclass(engine_class, Engine):
+        raise TypeError("%s does not inherit from %s" % (engine_class, Engine))
+
     if isinstance(train_dataset, (str, unicode)):
         with io.open(train_dataset, encoding="utf8") as f:
             train_dataset = json.load(f)
@@ -139,13 +182,11 @@ def compute_train_test_metrics(
         slot_matching_lambda = exact_match
 
     language = train_dataset["language"]
-    trained_engine = get_trained_engine(train_dataset, training_engine_class)
-    inference_engine = get_inference_engine(language, trained_engine.to_dict(),
-                                            inference_engine_class)
+    engine = engine_class(language)
+    engine.fit(train_dataset)
     utterances = get_stratified_utterances(test_dataset, seed=None,
                                            shuffle=False)
-    metrics = compute_engine_metrics(
-        inference_engine, utterances, use_asr_output, slot_matching_lambda,
-        verbose)
+    metrics, errors = compute_engine_metrics(engine, utterances,
+                                             slot_matching_lambda)
     metrics = compute_precision_recall(metrics)
-    return {"metrics": metrics}
+    return {"metrics": metrics, "errors": errors}
