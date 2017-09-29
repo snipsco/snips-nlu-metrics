@@ -106,8 +106,6 @@ def compute_cross_val_metrics(dataset, engine_class, nb_folds=5,
 
     global_errors = []
     total_batches = len(batches)
-    if progression_handler is not None:
-        progression_handler(0.0)
     for batch_index, (train_dataset, test_utterances) in enumerate(batches):
         language = train_dataset["language"]
         engine = engine_class(language)
