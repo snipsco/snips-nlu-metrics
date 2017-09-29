@@ -17,7 +17,8 @@ from nlu_metrics.utils.metrics_utils import (create_k_fold_batches,
 def compute_cross_val_nlu_metrics(dataset, training_engine_class,
                                   inference_engine_class, nb_folds=5,
                                   train_size_ratio=1.0,
-                                  slot_matching_lambda=None):
+                                  slot_matching_lambda=None,
+                                  progression_handler=None):
     """Compute pure NLU metrics on the dataset using cross validation
 
         :param dataset: dict or str, dataset or path to dataset
@@ -26,9 +27,10 @@ def compute_cross_val_nlu_metrics(dataset, training_engine_class,
         :param nb_folds: int, number of folds to use for cross validation
         :param train_size_ratio: float, ratio of intent utterances to use for
             training
-        :param slot_matching_lambda: lambda lhs_slot, rhs_slot: bool (optional),
+        :param slot_matching_lambda: lambda lhs_slot, rhs_slot: bool (optional)
             if defined, this function will be use to match slots when computing
             metrics, otherwise exact match will be used
+        :param progression_handler: handler called at each progression (%) step
         :return: dict containing the following data
 
             - "config": the config use to compute the metrics
@@ -39,11 +41,13 @@ def compute_cross_val_nlu_metrics(dataset, training_engine_class,
     engine_class = build_nlu_engine_class(training_engine_class,
                                           inference_engine_class)
     return compute_cross_val_metrics(dataset, engine_class, nb_folds,
-                                     train_size_ratio, slot_matching_lambda)
+                                     train_size_ratio, slot_matching_lambda,
+                                     progression_handler)
 
 
 def compute_cross_val_metrics(dataset, engine_class, nb_folds=5,
-                              train_size_ratio=1.0, slot_matching_lambda=None):
+                              train_size_ratio=1.0, slot_matching_lambda=None,
+                              progression_handler=None):
     """Compute end-to-end metrics on the dataset using cross validation
 
     :param dataset: dict or str, dataset or path to dataset
@@ -55,6 +59,7 @@ def compute_cross_val_metrics(dataset, engine_class, nb_folds=5,
     :param slot_matching_lambda: lambda lhs_slot, rhs_slot: bool (optional),
         if defined, this function will be use to match slots when computing
         metrics, otherwise exact match will be used
+    :param progression_handler: handler called at each progression (%) step
     :return: dict containing the following data
 
         - "config": the config use to compute the metrics
@@ -100,6 +105,9 @@ def compute_cross_val_metrics(dataset, engine_class, nb_folds=5,
     global_metrics = dict()
 
     global_errors = []
+    total_batches = len(batches)
+    if progression_handler is not None:
+        progression_handler(0.0)
     for batch_index, (train_dataset, test_utterances) in enumerate(batches):
         language = train_dataset["language"]
         engine = engine_class(language)
@@ -108,6 +116,8 @@ def compute_cross_val_metrics(dataset, engine_class, nb_folds=5,
                                                        slot_matching_lambda)
         global_metrics = aggregate_metrics(global_metrics, batch_metrics)
         global_errors += errors
+        if progression_handler is not None:
+            progression_handler(float(batch_index + 1) / float(total_batches))
 
     global_metrics = compute_precision_recall(global_metrics)
 
