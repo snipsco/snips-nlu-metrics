@@ -4,16 +4,13 @@ import io
 import json
 
 from nlu_metrics.engine import Engine, build_nlu_engine_class
-from nlu_metrics.utils.constants import INTENTS, UTTERANCES
+from nlu_metrics.utils.constants import (
+    INTENTS, UTTERANCES, INTENT_UTTERANCES, PARSING_ERRORS, METRICS)
 from nlu_metrics.utils.dataset_utils import get_stratified_utterances
 from nlu_metrics.utils.exception import NotEnoughDataError
 from nlu_metrics.utils.metrics_utils import (
     create_k_fold_batches, compute_engine_metrics, aggregate_metrics,
     compute_precision_recall)
-
-INTENT_UTTERANCES = "intent_utterances"
-PARSING_ERRORS = "parsing_errors"
-METRICS = "metrics"
 
 
 def compute_cross_val_nlu_metrics(dataset, training_engine_class,
@@ -35,9 +32,8 @@ def compute_cross_val_nlu_metrics(dataset, training_engine_class,
         :param progression_handler: handler called at each progression (%) step
         :return: dict containing the following data
 
-            - "config": the config use to compute the metrics
             - "metrics": the computed metrics
-            - "errors": the list of parsing errors
+            - "parsing_errors": the list of parsing errors
 
         """
     engine_class = build_nlu_engine_class(training_engine_class,
@@ -130,7 +126,7 @@ def compute_train_test_nlu_metrics(train_dataset, test_dataset,
         :return: dict containing the following data
 
             - "metrics": the computed metrics
-            - "errors": the list of parsing errors
+            - "parsing_errors": the list of parsing errors
         """
     engine_class = build_nlu_engine_class(training_engine_class,
                                           inference_engine_class)
@@ -155,7 +151,7 @@ def compute_train_test_metrics(train_dataset, test_dataset, engine_class,
     :return: dict containing the following data
 
         - "metrics": the computed metrics
-        - "errors": the list of parsing errors
+        - "parsing_errors": the list of parsing errors
     """
     if not issubclass(engine_class, Engine):
         raise TypeError("%s does not inherit from %s" % (engine_class, Engine))
