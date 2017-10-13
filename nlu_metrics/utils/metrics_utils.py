@@ -20,6 +20,13 @@ NONE_INTENT_NAME = "null"
 
 
 def create_k_fold_batches(dataset, k, train_size_ratio=1.0, seed=None):
+    assert 0.0 <= train_size_ratio <= 1.0
+    nb_utterances = {intent: len(data[UTTERANCES])
+                     for intent, data in dataset[INTENTS].iteritems()}
+    total_utterances = sum(nb_utterances.values())
+    if total_utterances < k:
+        raise NotEnoughDataError("Number of utterances is too low (%s)"
+                                 % total_utterances)
     dataset = deepcopy(dataset)
     utterances = get_stratified_utterances(dataset, seed, shuffle=True)
     k_fold_batches = []
@@ -50,7 +57,9 @@ def create_k_fold_batches(dataset, k, train_size_ratio=1.0, seed=None):
     return k_fold_batches
 
 
-def compute_engine_metrics(engine, test_utterances, slot_matching_lambda):
+def compute_engine_metrics(engine, test_utterances, slot_matching_lambda=None):
+    if slot_matching_lambda is None:
+        slot_matching_lambda = exact_match
     metrics = dict()
     errors = []
     for intent_name, utterance in test_utterances:
