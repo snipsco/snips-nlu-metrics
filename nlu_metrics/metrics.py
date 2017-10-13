@@ -10,8 +10,7 @@ from nlu_metrics.utils.exception import NotEnoughDataError
 from nlu_metrics.utils.metrics_utils import (create_k_fold_batches,
                                              compute_engine_metrics,
                                              aggregate_metrics,
-                                             compute_precision_recall,
-                                             exact_match)
+                                             compute_precision_recall)
 
 
 def compute_cross_val_nlu_metrics(dataset, training_engine_class,
@@ -68,11 +67,6 @@ def compute_cross_val_metrics(dataset, engine_class, nb_folds=5,
 
     """
 
-    assert 0.0 <= train_size_ratio <= 1.0
-
-    if slot_matching_lambda is None:
-        slot_matching_lambda = exact_match
-
     metrics_config = {
         "nb_folds": nb_folds,
         "train_size_ratio": train_size_ratio
@@ -82,21 +76,10 @@ def compute_cross_val_metrics(dataset, engine_class, nb_folds=5,
         with io.open(dataset, encoding="utf8") as f:
             dataset = json.load(f)
 
-    nb_utterances = {intent: len(data[UTTERANCES])
-                     for intent, data in dataset[INTENTS].iteritems()}
-    total_utterances = sum(nb_utterances.values())
-    if total_utterances < nb_folds:
-        message = "number of utterances is too low (%s)" % total_utterances
-        print("Skipping group because of: %s" % message)
-        return {
-            "config": metrics_config,
-            "training_info": message,
-            "metrics": None
-        }
     try:
         batches = create_k_fold_batches(dataset, nb_folds, train_size_ratio)
     except NotEnoughDataError as e:
-        print("Skipping group because of: %s" % e.message)
+        print("Skipping metrics computation because of: %s" % e.message)
         return {
             "config": metrics_config,
             "training_info": e.message,
@@ -119,6 +102,8 @@ def compute_cross_val_metrics(dataset, engine_class, nb_folds=5,
 
     global_metrics = compute_precision_recall(global_metrics)
 
+    nb_utterances = {intent: len(data[UTTERANCES])
+                     for intent, data in dataset[INTENTS].iteritems()}
     for intent, metrics in global_metrics.iteritems():
         metrics["intent_utterances"] = nb_utterances.get(intent, 0)
 
@@ -185,9 +170,6 @@ def compute_train_test_metrics(train_dataset, test_dataset, engine_class,
     if isinstance(test_dataset, (str, unicode)):
         with io.open(test_dataset, encoding="utf8") as f:
             test_dataset = json.load(f)
-
-    if slot_matching_lambda is None:
-        slot_matching_lambda = exact_match
 
     language = train_dataset["language"]
     engine = engine_class(language)
