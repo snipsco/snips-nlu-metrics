@@ -7,10 +7,13 @@ from nlu_metrics.engine import Engine, build_nlu_engine_class
 from nlu_metrics.utils.constants import INTENTS, UTTERANCES
 from nlu_metrics.utils.dataset_utils import get_stratified_utterances
 from nlu_metrics.utils.exception import NotEnoughDataError
-from nlu_metrics.utils.metrics_utils import (create_k_fold_batches,
-                                             compute_engine_metrics,
-                                             aggregate_metrics,
-                                             compute_precision_recall)
+from nlu_metrics.utils.metrics_utils import (
+    create_k_fold_batches, compute_engine_metrics, aggregate_metrics,
+    compute_precision_recall)
+
+INTENT_UTTERANCES = "intent_utterances"
+PARSING_ERRORS = "parsing_errors"
+METRICS = "metrics"
 
 
 def compute_cross_val_nlu_metrics(dataset, training_engine_class,
@@ -61,16 +64,12 @@ def compute_cross_val_metrics(dataset, engine_class, nb_folds=5,
     :param progression_handler: handler called at each progression (%) step
     :return: dict containing the following data
 
-        - "config": the config use to compute the metrics
         - "metrics": the computed metrics
-        - "errors": the list of parsing errors
+        - "parsing_errors": the list of parsing errors
 
     """
-
-    metrics_config = {
-        "nb_folds": nb_folds,
-        "train_size_ratio": train_size_ratio
-    }
+    if not issubclass(engine_class, Engine):
+        raise TypeError("%s does not inherit from %s" % (engine_class, Engine))
 
     if isinstance(dataset, (str, unicode)):
         with io.open(dataset, encoding="utf8") as f:
@@ -81,9 +80,8 @@ def compute_cross_val_metrics(dataset, engine_class, nb_folds=5,
     except NotEnoughDataError as e:
         print("Skipping metrics computation because of: %s" % e.message)
         return {
-            "config": metrics_config,
-            "training_info": e.message,
-            "metrics": None
+            METRICS: None,
+            PARSING_ERRORS: []
         }
     global_metrics = dict()
 
@@ -105,12 +103,11 @@ def compute_cross_val_metrics(dataset, engine_class, nb_folds=5,
     nb_utterances = {intent: len(data[UTTERANCES])
                      for intent, data in dataset[INTENTS].iteritems()}
     for intent, metrics in global_metrics.iteritems():
-        metrics["intent_utterances"] = nb_utterances.get(intent, 0)
+        metrics[INTENT_UTTERANCES] = nb_utterances.get(intent, 0)
 
     return {
-        "config": metrics_config,
-        "metrics": global_metrics,
-        "errors": global_errors
+        METRICS: global_metrics,
+        PARSING_ERRORS: global_errors
     }
 
 
@@ -179,4 +176,11 @@ def compute_train_test_metrics(train_dataset, test_dataset, engine_class,
     metrics, errors = compute_engine_metrics(engine, utterances,
                                              slot_matching_lambda)
     metrics = compute_precision_recall(metrics)
-    return {"metrics": metrics, "errors": errors}
+    nb_utterances = {intent: len(data[UTTERANCES])
+                     for intent, data in train_dataset[INTENTS].iteritems()}
+    for intent, intent_metrics in metrics.iteritems():
+        intent_metrics[INTENT_UTTERANCES] = nb_utterances.get(intent, 0)
+    return {
+        METRICS: metrics,
+        PARSING_ERRORS: errors
+    }
