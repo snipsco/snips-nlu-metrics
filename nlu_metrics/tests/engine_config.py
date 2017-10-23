@@ -1,3 +1,5 @@
+from __future__ import unicode_literals
+
 NLU_CONFIG = {
     'intent_classifier_config': {
         'data_augmentation_config': {
@@ -8,12 +10,12 @@ NLU_CONFIG = {
             'sublinear_tf': False
         },
         'log_reg_args': {
-            u'class_weight': u'balanced',
-            u'loss': u'log',
-            u'n_iter': 5,
-            u'n_jobs': -1,
-            u'penalty': u'l2',
-            u'random_state': 42
+            'class_weight': 'balanced',
+            'loss': 'log',
+            'n_iter': 5,
+            'n_jobs': -1,
+            'penalty': 'l2',
+            'random_state': 42
         }
     },
     'probabilistic_intent_parser_config': {

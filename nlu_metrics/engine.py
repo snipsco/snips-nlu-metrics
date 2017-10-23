@@ -6,6 +6,8 @@ import os
 import zipfile
 from abc import ABCMeta, abstractmethod
 
+from copy import deepcopy
+
 from nlu_metrics.utils.temp_utils import tempdir_ctx
 
 TRAINED_ENGINE_FILENAME = "trained_assistant.json"
@@ -33,12 +35,14 @@ class Engine(object):
 
 def build_nlu_engine_class(training_class, inference_class,
                            training_config=None):
+    _training_config = deepcopy(training_config)
+
     class NLUEngine(Engine):
         def __init__(self, language):
             super(NLUEngine, self).__init__(language)
             self.language = language
             self.inference_engine = None
-            self.training_config = training_config
+            self.training_config = _training_config
 
         def fit(self, dataset):
             if self.training_config is not None:
