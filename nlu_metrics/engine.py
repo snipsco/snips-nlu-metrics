@@ -31,15 +31,21 @@ class Engine(object):
         pass
 
 
-def build_nlu_engine_class(training_class, inference_class):
+def build_nlu_engine_class(training_class, inference_class,
+                           training_config=None):
     class NLUEngine(Engine):
         def __init__(self, language):
             super(NLUEngine, self).__init__(language)
             self.language = language
             self.inference_engine = None
+            self.training_config = training_config
 
         def fit(self, dataset):
-            training_engine = training_class(self.language)
+            if self.training_config is not None:
+                training_engine = training_class(self.language,
+                                                 config=self.training_config)
+            else:
+                training_engine = training_class(self.language)
             training_engine.fit(dataset)
             trained_engine_dict = training_engine.to_dict()
             self.inference_engine = get_inference_nlu_engine(
