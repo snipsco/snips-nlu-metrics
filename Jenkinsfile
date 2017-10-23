@@ -8,7 +8,7 @@ def version(path) {
 }
 
 
-node('jenkins-slave-ec2') {
+node('jenkins-slave-generic') {
     stage('Checkout') {
         deleteDir()
         checkout scm

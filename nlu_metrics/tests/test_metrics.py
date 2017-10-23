@@ -11,6 +11,7 @@ from nlu_metrics import (compute_cross_val_metrics, compute_train_test_metrics)
 from nlu_metrics.engine import build_nlu_engine_class
 from nlu_metrics.metrics import compute_cross_val_nlu_metrics, \
     compute_train_test_nlu_metrics
+from nlu_metrics.tests.engine_config import NLU_CONFIG
 
 
 class TestMetricsUtils(unittest.TestCase):
@@ -82,6 +83,24 @@ class TestMetricsUtils(unittest.TestCase):
         try:
             engine_class = build_nlu_engine_class(SnipsNLUEngine,
                                                   RustNLUEngine)
+            compute_train_test_metrics(
+                train_dataset=dataset, test_dataset=dataset,
+                engine_class=engine_class)
+        except Exception as e:
+            self.fail(e.message)
+
+    def test_end_to_end_train_test_metrics_with_training_config(self):
+        # Given
+        dataset_path = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                                    "resources", "beverage_dataset.json")
+        with io.open(dataset_path, encoding="utf8") as f:
+            dataset = json.load(f)
+
+        # When/Then
+        try:
+            engine_class = build_nlu_engine_class(SnipsNLUEngine,
+                                                  RustNLUEngine,
+                                                  training_config=NLU_CONFIG)
             compute_train_test_metrics(
                 train_dataset=dataset, test_dataset=dataset,
                 engine_class=engine_class)
