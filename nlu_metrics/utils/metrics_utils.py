@@ -2,11 +2,14 @@ from __future__ import unicode_literals
 
 from copy import deepcopy
 
+import numpy as np
+from sklearn.model_selection import StratifiedShuffleSplit
+from sklearn.utils import check_random_state
+
 from constants import (INTENTS, UTTERANCES, DATA, SLOT_NAME, TEXT,
                        FALSE_POSITIVE, FALSE_NEGATIVE, ENTITY,
                        TRUE_POSITIVE)
 from nlu_metrics.utils.dataset_utils import (input_string_from_chunks,
-                                             get_stratified_utterances,
                                              get_utterances_subset)
 from nlu_metrics.utils.exception import NotEnoughDataError
 
@@ -19,42 +22,48 @@ INITIAL_METRICS = {
 NONE_INTENT_NAME = "null"
 
 
-def create_k_fold_batches(dataset, k, train_size_ratio=1.0, seed=None):
+def create_shuffle_stratified_splits(dataset, n_splits, train_size_ratio=1.0,
+                                     seed=None):
     assert 0.0 <= train_size_ratio <= 1.0
     nb_utterances = {intent: len(data[UTTERANCES])
                      for intent, data in dataset[INTENTS].iteritems()}
     total_utterances = sum(nb_utterances.values())
-    if total_utterances < k:
+    if total_utterances < n_splits:
         raise NotEnoughDataError("Number of utterances is too low (%s)"
                                  % total_utterances)
     dataset = deepcopy(dataset)
-    utterances = get_stratified_utterances(dataset, seed, shuffle=True)
-    k_fold_batches = []
-    batch_size = len(utterances) / k
-    for batch_index in xrange(k):
-        test_start = batch_index * batch_size
-        test_end = (batch_index + 1) * batch_size
-        train_utterances = utterances[0:test_start] + utterances[test_end:]
+    utterances = np.array([
+        (intent_name, utterance)
+        for intent_name, intent_data in dataset[INTENTS].iteritems()
+        for utterance in intent_data[UTTERANCES]
+    ])
+    intents = np.array([u[0] for u in utterances])
+    X = np.zeros(len(intents))
+    random_state = check_random_state(seed)
+    test_size = 1 / float(n_splits)
+    sss = StratifiedShuffleSplit(n_splits=n_splits, test_size=test_size,
+                                 random_state=random_state)
+    splits = []
+    for train_index, test_index in sss.split(X, intents):
+        train_utterances = list(utterances[train_index])
         train_utterances = get_utterances_subset(train_utterances,
                                                  train_size_ratio)
+        test_utterances = list(utterances[test_index])
+
         if len(train_utterances) == 0:
             raise NotEnoughDataError("Not enough data given the other "
                                      "parameters "
                                      "(nb_folds=%s, train_size_ratio=%s)"
-                                     % (k, train_size_ratio))
-        test_utterances = utterances[test_start: test_end]
+                                     % (n_splits, train_size_ratio))
         train_dataset = deepcopy(dataset)
         train_dataset[INTENTS] = dict()
         for intent_name, utterance in train_utterances:
             if intent_name not in train_dataset[INTENTS]:
-                train_dataset[INTENTS][intent_name] = {
-                    UTTERANCES: [],
-                    "engineType": "regex"
-                }
+                train_dataset[INTENTS][intent_name] = {UTTERANCES: []}
             train_dataset[INTENTS][intent_name][UTTERANCES].append(
                 deepcopy(utterance))
-        k_fold_batches.append((train_dataset, test_utterances))
-    return k_fold_batches
+        splits.append((train_dataset, test_utterances))
+    return splits
 
 
 def compute_engine_metrics(engine, test_utterances, slot_matching_lambda=None):
