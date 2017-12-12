@@ -45,10 +45,10 @@ def create_shuffle_stratified_splits(dataset, n_splits, train_size_ratio=1.0,
                                  random_state=random_state)
     splits = []
     for train_index, test_index in sss.split(X, intents):
-        train_utterances = list(utterances[train_index])
+        train_utterances = utterances[train_index].tolist()
         train_utterances = get_utterances_subset(train_utterances,
                                                  train_size_ratio)
-        test_utterances = list(utterances[test_index])
+        test_utterances = utterances[test_index].tolist()
 
         if len(train_utterances) == 0:
             raise NotEnoughDataError("Not enough data given the other "
