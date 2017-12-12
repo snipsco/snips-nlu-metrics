@@ -6,10 +6,10 @@ import json
 from nlu_metrics.engine import Engine, build_nlu_engine_class
 from nlu_metrics.utils.constants import (
     INTENTS, UTTERANCES, INTENT_UTTERANCES, PARSING_ERRORS, METRICS)
-from nlu_metrics.utils.dataset_utils import get_stratified_utterances
 from nlu_metrics.utils.exception import NotEnoughDataError
 from nlu_metrics.utils.metrics_utils import (
-    create_k_fold_batches, compute_engine_metrics, aggregate_metrics,
+    create_shuffle_stratified_splits, compute_engine_metrics,
+    aggregate_metrics,
     compute_precision_recall)
 
 
@@ -72,7 +72,8 @@ def compute_cross_val_metrics(dataset, engine_class, nb_folds=5,
             dataset = json.load(f)
 
     try:
-        batches = create_k_fold_batches(dataset, nb_folds, train_size_ratio)
+        splits = create_shuffle_stratified_splits(dataset, nb_folds,
+                                                  train_size_ratio)
     except NotEnoughDataError as e:
         print("Skipping metrics computation because of: %s" % e.message)
         return {
@@ -82,17 +83,17 @@ def compute_cross_val_metrics(dataset, engine_class, nb_folds=5,
     global_metrics = dict()
 
     global_errors = []
-    total_batches = len(batches)
-    for batch_index, (train_dataset, test_utterances) in enumerate(batches):
+    total_splits = len(splits)
+    for split_index, (train_dataset, test_utterances) in enumerate(splits):
         language = train_dataset["language"]
         engine = engine_class(language)
         engine.fit(train_dataset)
-        batch_metrics, errors = compute_engine_metrics(engine, test_utterances,
+        split_metrics, errors = compute_engine_metrics(engine, test_utterances,
                                                        slot_matching_lambda)
-        global_metrics = aggregate_metrics(global_metrics, batch_metrics)
+        global_metrics = aggregate_metrics(global_metrics, split_metrics)
         global_errors += errors
         if progression_handler is not None:
-            progression_handler(float(batch_index + 1) / float(total_batches))
+            progression_handler(float(split_index + 1) / float(total_splits))
 
     global_metrics = compute_precision_recall(global_metrics)
 
@@ -167,9 +168,12 @@ def compute_train_test_metrics(train_dataset, test_dataset, engine_class,
     language = train_dataset["language"]
     engine = engine_class(language)
     engine.fit(train_dataset)
-    utterances = get_stratified_utterances(test_dataset, seed=None,
-                                           shuffle=False)
-    metrics, errors = compute_engine_metrics(engine, utterances,
+    test_utterances = [
+        (intent_name, utterance)
+        for intent_name, intent_data in test_dataset[INTENTS].iteritems()
+        for utterance in intent_data[UTTERANCES]
+    ]
+    metrics, errors = compute_engine_metrics(engine, test_utterances,
                                              slot_matching_lambda)
     metrics = compute_precision_recall(metrics)
     nb_utterances = {intent: len(data[UTTERANCES])
