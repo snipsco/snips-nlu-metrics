@@ -33,7 +33,10 @@ from snips_nlu_rust import NLUEngine as NLUInferenceEngine
 
 def prefix_match(lhs_slot, rhs_slot):
     """Example of a custom slot matching function based on prefix"""
-    return lhs_slot.startswith(rhs_slot) or rhs_slot.startswith(lhs_slot)
+    expected_slot_text = lhs_slot["text"]
+    parsed_slot_text = rhs_slot["rawValue"]
+    return expected_slot_text.startswith(parsed_slot_text) or \
+        parsed_slot_text.startswith(expected_slot_text)
 
 tt_metrics = compute_train_test_nlu_metrics(train_dataset="path/to/train_dataset.json", 
                                             test_dataset="path/to/test_dataset.json",

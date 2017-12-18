@@ -3,7 +3,7 @@ from __future__ import unicode_literals
 import unittest
 
 from nlu_metrics.utils.constants import TRUE_POSITIVE, FALSE_POSITIVE, \
-    FALSE_NEGATIVE
+    FALSE_NEGATIVE, TEXT
 from nlu_metrics.utils.metrics_utils import (aggregate_metrics,
                                              compute_utterance_metrics,
                                              compute_precision_recall,
@@ -74,7 +74,7 @@ class TestMetricsUtils(unittest.TestCase):
         engine = TestEngine()
 
         def slots_match(lhs, rhs):
-            return lhs == rhs
+            return lhs[TEXT] == rhs["rawValue"]
 
         # When
         metrics, errors = compute_engine_metrics(
@@ -416,7 +416,7 @@ class TestMetricsUtils(unittest.TestCase):
         }
 
         def slot_matching_lambda(l, r):
-            return l.split("_")[0] == r.split("_")[0]
+            return l[TEXT].split("_")[0] == r["rawValue"].split("_")[0]
 
         # When
         metrics = compute_utterance_metrics(parsing, utterance, intent_name,
