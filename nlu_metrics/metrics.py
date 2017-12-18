@@ -26,9 +26,12 @@ def compute_cross_val_nlu_metrics(dataset, training_engine_class,
         :param nb_folds: int, number of folds to use for cross validation
         :param train_size_ratio: float, ratio of intent utterances to use for
             training
-        :param slot_matching_lambda: lambda lhs_slot, rhs_slot: bool (optional)
+        :param slot_matching_lambda:
+            lambda expected_slot, actual_slot: bool (optional),
             if defined, this function will be use to match slots when computing
-            metrics, otherwise exact match will be used
+            metrics, otherwise exact match will be used.
+            `expected_slot` corresponds to the slot as defined in the dataset, and
+            `actual_slot` corresponds to the slot as returned by the NLU.
         :param progression_handler: handler called at each progression (%) step
         :return: dict containing the following data
 
@@ -54,9 +57,12 @@ def compute_cross_val_metrics(dataset, engine_class, nb_folds=5,
     :param nb_folds: int, number of folds to use for cross validation
     :param train_size_ratio: float, ratio of intent utterances to use for
         training
-    :param slot_matching_lambda: lambda lhs_slot, rhs_slot: bool (optional),
+    :param slot_matching_lambda:
+        lambda expected_slot, actual_slot: bool (optional),
         if defined, this function will be use to match slots when computing
-        metrics, otherwise exact match will be used
+        metrics, otherwise exact match will be used.
+        `expected_slot` corresponds to the slot as defined in the dataset, and
+        `actual_slot` corresponds to the slot as returned by the NLU.
     :param progression_handler: handler called at each progression (%) step
     :return: dict containing the following data
 
@@ -121,9 +127,12 @@ def compute_train_test_nlu_metrics(train_dataset, test_dataset,
             testing
         :param training_engine_class: python class to use for training
         :param inference_engine_class: python class to use for inference
-        :param slot_matching_lambda: lambda lhs_slot, rhs_slot: bool (optional),
+        :param slot_matching_lambda:
+            lambda expected_slot, actual_slot: bool (optional),
             if defined, this function will be use to match slots when computing
-            metrics, otherwise exact match will be used
+            metrics, otherwise exact match will be used.
+            `expected_slot` corresponds to the slot as defined in the dataset, and
+            `actual_slot` corresponds to the slot as returned by the NLU.
         :return: dict containing the following data
 
             - "metrics": the computed metrics
@@ -146,9 +155,12 @@ def compute_train_test_metrics(train_dataset, test_dataset, engine_class,
         testing
     :param engine_class: python class to use for training and inference, this
         class must inherit from `Engine`
-    :param slot_matching_lambda: lambda lhs_slot, rhs_slot: bool (optional),
+    :param slot_matching_lambda:
+        lambda expected_slot, actual_slot: bool (optional),
         if defined, this function will be use to match slots when computing
-        metrics, otherwise exact match will be used
+        metrics, otherwise exact match will be used.
+        `expected_slot` corresponds to the slot as defined in the dataset, and
+        `actual_slot` corresponds to the slot as returned by the NLU.
     :return: dict containing the following data
 
         - "metrics": the computed metrics

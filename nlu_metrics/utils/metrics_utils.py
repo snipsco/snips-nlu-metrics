@@ -131,8 +131,8 @@ def compute_utterance_metrics(parsing, utterance, utterance_intent,
     for slot in utterance_slots:
         slot_name = slot[SLOT_NAME]
         slot_metrics = metrics[utterance_intent]["slots"][slot_name]
-        if any(s["slotName"] == slot_name and slot_matching_lambda(
-                s["rawValue"], slot[TEXT]) for s in parsed_slots):
+        if any(s["slotName"] == slot_name and slot_matching_lambda(slot, s)
+               for s in parsed_slots):
             slot_metrics[TRUE_POSITIVE] += 1
         else:
             slot_metrics[FALSE_NEGATIVE] += 1
@@ -141,8 +141,8 @@ def compute_utterance_metrics(parsing, utterance, utterance_intent,
     for slot in parsed_slots:
         slot_name = slot["slotName"]
         slot_metrics = metrics[parsing_intent_name]["slots"][slot_name]
-        if all(s[SLOT_NAME] != slot_name or not slot_matching_lambda(
-                s[TEXT], slot["rawValue"]) for s in utterance_slots):
+        if all(s[SLOT_NAME] != slot_name or not slot_matching_lambda(s, slot)
+               for s in utterance_slots):
             slot_metrics[FALSE_POSITIVE] += 1
     return metrics
 
@@ -239,4 +239,4 @@ def is_builtin_entity(entity_name):
 
 
 def exact_match(lhs_slot, rhs_slot):
-    return lhs_slot == rhs_slot
+    return lhs_slot[TEXT] == rhs_slot["rawValue"]
