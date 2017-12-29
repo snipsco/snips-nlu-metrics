@@ -91,8 +91,7 @@ def compute_cross_val_metrics(dataset, engine_class, nb_folds=5,
     global_errors = []
     total_splits = len(splits)
     for split_index, (train_dataset, test_utterances) in enumerate(splits):
-        language = train_dataset["language"]
-        engine = engine_class(language)
+        engine = engine_class()
         engine.fit(train_dataset)
         split_metrics, errors = compute_engine_metrics(engine, test_utterances,
                                                        slot_matching_lambda)
@@ -177,8 +176,7 @@ def compute_train_test_metrics(train_dataset, test_dataset, engine_class,
         with io.open(test_dataset, encoding="utf8") as f:
             test_dataset = json.load(f)
 
-    language = train_dataset["language"]
-    engine = engine_class(language)
+    engine = engine_class()
     engine.fit(train_dataset)
     test_utterances = [
         (intent_name, utterance)

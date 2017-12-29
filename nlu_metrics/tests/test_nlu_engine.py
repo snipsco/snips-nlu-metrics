@@ -5,7 +5,7 @@ import unittest
 from nlu_metrics.engine import get_trained_nlu_engine, get_inference_nlu_engine
 
 
-class TestNLUEngineUtils(unittest.TestCase):
+class TestNLUEngine(unittest.TestCase):
     def test_get_trained_engine_should_use_provided_engine_class(self):
         # Given
         class TestTrainingEngine(object):
@@ -58,12 +58,12 @@ class TestNLUEngineUtils(unittest.TestCase):
     def test_get_inference_engine_should_use_provided_engine_class(self):
         # Given
         class TestInferenceEngine(object):
-            def __init__(self, language, data_zip):
-                self.language = language
+            def __init__(self, data_zip):
+                pass
 
         # When
-        inference_engine = get_inference_nlu_engine("en", dict(),
+        inference_engine = get_inference_nlu_engine(dict(),
                                                     TestInferenceEngine)
 
         # Then
-        self.assertEquals(inference_engine.language, "en")
+        self.assertIsInstance(inference_engine, TestInferenceEngine)

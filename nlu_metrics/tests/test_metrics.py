@@ -15,7 +15,7 @@ from nlu_metrics.tests.engine_config import NLU_CONFIG
 from nlu_metrics.utils.constants import METRICS, PARSING_ERRORS
 
 
-class TestMetricsUtils(unittest.TestCase):
+class TestMetrics(unittest.TestCase):
     @patch('nlu_metrics.metrics.compute_cross_val_metrics')
     def test_cross_val_nlu_metrics(self, mocked_cross_val_metrics):
         # Given
