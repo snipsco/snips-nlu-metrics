@@ -1,5 +1,7 @@
 from __future__ import unicode_literals
+from __future__ import division
 
+from builtins import object
 import unittest
 
 from nlu_metrics.utils.constants import (TRUE_POSITIVE, FALSE_POSITIVE,

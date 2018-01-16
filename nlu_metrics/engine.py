@@ -1,5 +1,6 @@
 from __future__ import unicode_literals
 
+from builtins import object
 import io
 import json
 import os
@@ -8,16 +9,16 @@ from abc import ABCMeta, abstractmethod
 from copy import deepcopy
 
 from nlu_metrics.utils.temp_utils import tempdir_ctx
+from future.utils import with_metaclass
 
 TRAINED_ENGINE_FILENAME = "trained_assistant.json"
 
 
-class Engine(object):
+class Engine(with_metaclass(ABCMeta, object)):
     """
     Abstract class which represents an engine that can be used in the metrics
     API. All engine classes must inherit from `Engine`.
     """
-    __metaclass__ = ABCMeta
 
     @abstractmethod
     def fit(self, dataset):

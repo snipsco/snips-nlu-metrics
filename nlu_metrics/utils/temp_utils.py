@@ -1,3 +1,4 @@
+from builtins import object
 import shutil
 from tempfile import mkdtemp
 
