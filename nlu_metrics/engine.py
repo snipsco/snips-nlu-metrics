@@ -1,15 +1,17 @@
 from __future__ import unicode_literals
 
-from builtins import object
 import io
 import json
 import os
 import zipfile
 from abc import ABCMeta, abstractmethod
+from builtins import object
+from builtins import str
 from copy import deepcopy
 
-from nlu_metrics.utils.temp_utils import tempdir_ctx
 from future.utils import with_metaclass
+
+from nlu_metrics.utils.temp_utils import tempdir_ctx
 
 TRAINED_ENGINE_FILENAME = "trained_assistant.json"
 
@@ -67,7 +69,7 @@ def get_inference_nlu_engine(trained_engine_dict, inference_engine_class):
         archive_path = os.path.join(engine_dir, 'assistant.zip')
 
         with io.open(trained_engine_path, mode='w', encoding='utf8') as f:
-            f.write(json.dumps(trained_engine_dict).decode())
+            f.write(str(json.dumps(trained_engine_dict)))
         with zipfile.ZipFile(archive_path, 'w') as zf:
             zf.write(trained_engine_path, arcname=TRAINED_ENGINE_FILENAME)
         with io.open(archive_path, mode='rb') as f:

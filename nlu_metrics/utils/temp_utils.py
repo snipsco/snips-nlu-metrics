@@ -1,5 +1,5 @@
-from builtins import object
 import shutil
+from builtins import object
 from tempfile import mkdtemp
 
 

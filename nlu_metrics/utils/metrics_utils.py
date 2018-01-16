@@ -1,6 +1,6 @@
-from __future__ import unicode_literals
 from __future__ import absolute_import
 from __future__ import division
+from __future__ import unicode_literals
 
 from copy import deepcopy
 
@@ -8,9 +8,9 @@ import numpy as np
 from sklearn.model_selection import StratifiedShuffleSplit
 from sklearn.utils import check_random_state
 
-from .constants import (INTENTS, UTTERANCES, DATA, SLOT_NAME, TEXT,
-                       FALSE_POSITIVE, FALSE_NEGATIVE, ENTITY,
-                       TRUE_POSITIVE)
+from nlu_metrics.utils.constants import (
+    INTENTS, UTTERANCES, DATA, SLOT_NAME, TEXT, FALSE_POSITIVE, FALSE_NEGATIVE,
+    ENTITY, TRUE_POSITIVE)
 from nlu_metrics.utils.dataset_utils import (input_string_from_chunks,
                                              get_utterances_subset)
 from nlu_metrics.utils.exception import NotEnoughDataError
@@ -104,7 +104,8 @@ def compute_utterance_metrics(parsing, utterance, utterance_intent,
         parsing_intent_name = NONE_INTENT_NAME
 
     parsed_slots = [] if parsing["slots"] is None else parsing["slots"]
-    utterance_slots = [chunk for chunk in utterance[DATA] if SLOT_NAME in chunk]
+    utterance_slots = [chunk for chunk in utterance[DATA] if
+                       SLOT_NAME in chunk]
 
     # initialize metrics
     intent_names = {parsing_intent_name, utterance_intent}

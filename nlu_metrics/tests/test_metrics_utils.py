@@ -236,7 +236,7 @@ class TestMetricsUtils(unittest.TestCase):
             }
         ]
         self.assertDictEqual(expected_metrics, metrics)
-        self.assertItemsEqual(expected_errors, errors)
+        self.assertListEqual(expected_errors, errors)
 
     def test_should_compute_utterance_metrics_when_wrong_intent(self):
         # Given

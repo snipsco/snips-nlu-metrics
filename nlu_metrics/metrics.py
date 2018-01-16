@@ -5,6 +5,8 @@ from __future__ import unicode_literals
 import io
 import json
 
+from past.builtins import basestring
+
 from nlu_metrics.engine import Engine, build_nlu_engine_class
 from nlu_metrics.utils.constants import (
     INTENTS, UTTERANCES, INTENT_UTTERANCES, PARSING_ERRORS, METRICS)
@@ -74,7 +76,7 @@ def compute_cross_val_metrics(dataset, engine_class, nb_folds=5,
     if not issubclass(engine_class, Engine):
         print("WARNING: %s does not inherit from %s" % (engine_class, Engine))
 
-    if isinstance(dataset, str):
+    if isinstance(dataset, basestring):
         with io.open(dataset, encoding="utf8") as f:
             dataset = json.load(f)
 
@@ -169,11 +171,11 @@ def compute_train_test_metrics(train_dataset, test_dataset, engine_class,
     if not issubclass(engine_class, Engine):
         print("WARNING: %s does not inherit from %s" % (engine_class, Engine))
 
-    if isinstance(train_dataset, str):
+    if isinstance(train_dataset, basestring):
         with io.open(train_dataset, encoding="utf8") as f:
             train_dataset = json.load(f)
 
-    if isinstance(test_dataset, str):
+    if isinstance(test_dataset, basestring):
         with io.open(test_dataset, encoding="utf8") as f:
             test_dataset = json.load(f)
 

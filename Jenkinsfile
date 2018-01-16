@@ -14,21 +14,13 @@ node('jenkins-slave-generic') {
         checkout scm
     }
 
-    stage('Setup') {
-    	sh "virtualenv venv"
-    	def credentials = "${env.NEXUS_USERNAME_PYPI}:${env.NEXUS_PASSWORD_PYPI}"
-    	sh """
-    	${VENV}
-    	echo "[global]\nindex = https://${credentials}@nexus-repository.snips.ai/repository/pypi-internal/pypi\nindex-url = https://pypi.python.org/simple/\nextra-index-url = https://${credentials}@nexus-repository.snips.ai/repository/pypi-internal/simple" >> venv/pip.conf
-    	pip install .[test]
-    	"""
-    }
-
     stage('Tests') {
         sh """
-        ${VENV}
-        python -m unittest discover
-        """
+    	virtualenv venv
+    	${VENV}
+    	pip install tox
+    	tox
+    	"""
     }
 
     stage('Publish') {
