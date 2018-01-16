@@ -1,8 +1,9 @@
+from __future__ import absolute_import
 from __future__ import unicode_literals
 
 from copy import deepcopy
 
-from constants import TEXT
+from .constants import TEXT
 
 
 def input_string_from_chunks(chunks):
@@ -17,7 +18,7 @@ def get_utterances_subset(utterances, ratio):
         utterances_dict[intent_name].append(deepcopy(utterance))
 
     utterances_subset = []
-    for (intent_name, utterances) in utterances_dict.iteritems():
+    for (intent_name, utterances) in utterances_dict.items():
         nb_utterances = int(ratio * len(utterances))
         utterances_subset += [(intent_name, u)
                               for u in utterances[:nb_utterances]]

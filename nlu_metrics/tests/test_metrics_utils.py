@@ -1,9 +1,11 @@
 from __future__ import unicode_literals
+from __future__ import division
 
+from builtins import object
 import unittest
 
-from nlu_metrics.utils.constants import TRUE_POSITIVE, FALSE_POSITIVE, \
-    FALSE_NEGATIVE, TEXT
+from nlu_metrics.utils.constants import (TRUE_POSITIVE, FALSE_POSITIVE,
+                                         FALSE_NEGATIVE, TEXT)
 from nlu_metrics.utils.metrics_utils import (aggregate_metrics,
                                              compute_utterance_metrics,
                                              compute_precision_recall,
@@ -234,7 +236,7 @@ class TestMetricsUtils(unittest.TestCase):
             }
         ]
         self.assertDictEqual(expected_metrics, metrics)
-        self.assertItemsEqual(expected_errors, errors)
+        self.assertListEqual(expected_errors, errors)
 
     def test_should_compute_utterance_metrics_when_wrong_intent(self):
         # Given

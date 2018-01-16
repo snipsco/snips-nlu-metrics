@@ -4,18 +4,19 @@ import os
 import unittest
 
 from mock import patch
-from snips_nlu import SnipsNLUEngine
-from snips_nlu_rust import NLUEngine as RustNLUEngine
 
-from nlu_metrics import (compute_cross_val_metrics, compute_train_test_metrics)
 from nlu_metrics.engine import build_nlu_engine_class
-from nlu_metrics.metrics import compute_cross_val_nlu_metrics, \
-    compute_train_test_nlu_metrics
+from nlu_metrics.metrics import (compute_cross_val_metrics,
+                                 compute_train_test_metrics,
+                                 compute_cross_val_nlu_metrics,
+                                 compute_train_test_nlu_metrics)
 from nlu_metrics.tests.engine_config import NLU_CONFIG
+from nlu_metrics.tests.mock_engine import (MockTrainingEngine,
+                                           MockInferenceEngine)
 from nlu_metrics.utils.constants import METRICS, PARSING_ERRORS
 
 
-class TestMetricsUtils(unittest.TestCase):
+class TestMetrics(unittest.TestCase):
     @patch('nlu_metrics.metrics.compute_cross_val_metrics')
     def test_cross_val_nlu_metrics(self, mocked_cross_val_metrics):
         # Given
@@ -26,8 +27,8 @@ class TestMetricsUtils(unittest.TestCase):
         # When/Then
         try:
             res = compute_cross_val_nlu_metrics(
-                dataset=dataset_path, training_engine_class=SnipsNLUEngine,
-                inference_engine_class=RustNLUEngine, nb_folds=5)
+                dataset=dataset_path, training_engine_class=MockTrainingEngine,
+                inference_engine_class=MockInferenceEngine, nb_folds=5)
         except Exception as e:
             self.fail(e.message)
 
@@ -40,8 +41,8 @@ class TestMetricsUtils(unittest.TestCase):
 
         # When
         result = compute_cross_val_nlu_metrics(
-            dataset=dataset_path, training_engine_class=SnipsNLUEngine,
-            inference_engine_class=RustNLUEngine, nb_folds=11)
+            dataset=dataset_path, training_engine_class=MockTrainingEngine,
+            inference_engine_class=MockInferenceEngine, nb_folds=11)
 
         # Then
         expected_result = {
@@ -59,8 +60,8 @@ class TestMetricsUtils(unittest.TestCase):
 
         # When/Then
         try:
-            engine_class = build_nlu_engine_class(SnipsNLUEngine,
-                                                  RustNLUEngine)
+            engine_class = build_nlu_engine_class(MockTrainingEngine,
+                                                  MockInferenceEngine)
             compute_cross_val_metrics(dataset=dataset,
                                       engine_class=engine_class, nb_folds=5)
         except Exception as e:
@@ -80,8 +81,8 @@ class TestMetricsUtils(unittest.TestCase):
         try:
             res = compute_train_test_nlu_metrics(
                 train_dataset=dataset, test_dataset=dataset,
-                training_engine_class=SnipsNLUEngine,
-                inference_engine_class=RustNLUEngine)
+                training_engine_class=MockTrainingEngine,
+                inference_engine_class=MockInferenceEngine)
         except Exception as e:
             self.fail(e.message)
 
@@ -96,8 +97,8 @@ class TestMetricsUtils(unittest.TestCase):
 
         # When/Then
         try:
-            engine_class = build_nlu_engine_class(SnipsNLUEngine,
-                                                  RustNLUEngine)
+            engine_class = build_nlu_engine_class(MockTrainingEngine,
+                                                  MockInferenceEngine)
             compute_train_test_metrics(
                 train_dataset=dataset, test_dataset=dataset,
                 engine_class=engine_class)
@@ -113,8 +114,8 @@ class TestMetricsUtils(unittest.TestCase):
 
         # When/Then
         try:
-            engine_class = build_nlu_engine_class(SnipsNLUEngine,
-                                                  RustNLUEngine,
+            engine_class = build_nlu_engine_class(MockTrainingEngine,
+                                                  MockInferenceEngine,
                                                   training_config=NLU_CONFIG)
             compute_train_test_metrics(
                 train_dataset=dataset, test_dataset=dataset,

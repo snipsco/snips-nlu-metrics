@@ -1,7 +1,11 @@
+from __future__ import division
+from __future__ import print_function
 from __future__ import unicode_literals
 
 import io
 import json
+
+from past.builtins import basestring
 
 from nlu_metrics.engine import Engine, build_nlu_engine_class
 from nlu_metrics.utils.constants import (
@@ -9,8 +13,7 @@ from nlu_metrics.utils.constants import (
 from nlu_metrics.utils.exception import NotEnoughDataError
 from nlu_metrics.utils.metrics_utils import (
     create_shuffle_stratified_splits, compute_engine_metrics,
-    aggregate_metrics,
-    compute_precision_recall)
+    aggregate_metrics, compute_precision_recall)
 
 
 def compute_cross_val_nlu_metrics(dataset, training_engine_class,
@@ -71,9 +74,9 @@ def compute_cross_val_metrics(dataset, engine_class, nb_folds=5,
 
     """
     if not issubclass(engine_class, Engine):
-        raise TypeError("%s does not inherit from %s" % (engine_class, Engine))
+        print("WARNING: %s does not inherit from %s" % (engine_class, Engine))
 
-    if isinstance(dataset, (str, unicode)):
+    if isinstance(dataset, basestring):
         with io.open(dataset, encoding="utf8") as f:
             dataset = json.load(f)
 
@@ -91,8 +94,7 @@ def compute_cross_val_metrics(dataset, engine_class, nb_folds=5,
     global_errors = []
     total_splits = len(splits)
     for split_index, (train_dataset, test_utterances) in enumerate(splits):
-        language = train_dataset["language"]
-        engine = engine_class(language)
+        engine = engine_class()
         engine.fit(train_dataset)
         split_metrics, errors = compute_engine_metrics(engine, test_utterances,
                                                        slot_matching_lambda)
@@ -104,8 +106,8 @@ def compute_cross_val_metrics(dataset, engine_class, nb_folds=5,
     global_metrics = compute_precision_recall(global_metrics)
 
     nb_utterances = {intent: len(data[UTTERANCES])
-                     for intent, data in dataset[INTENTS].iteritems()}
-    for intent, metrics in global_metrics.iteritems():
+                     for intent, data in dataset[INTENTS].items()}
+    for intent, metrics in global_metrics.items():
         metrics[INTENT_UTTERANCES] = nb_utterances.get(intent, 0)
 
     return {
@@ -167,30 +169,29 @@ def compute_train_test_metrics(train_dataset, test_dataset, engine_class,
         - "parsing_errors": the list of parsing errors
     """
     if not issubclass(engine_class, Engine):
-        raise TypeError("%s does not inherit from %s" % (engine_class, Engine))
+        print("WARNING: %s does not inherit from %s" % (engine_class, Engine))
 
-    if isinstance(train_dataset, (str, unicode)):
+    if isinstance(train_dataset, basestring):
         with io.open(train_dataset, encoding="utf8") as f:
             train_dataset = json.load(f)
 
-    if isinstance(test_dataset, (str, unicode)):
+    if isinstance(test_dataset, basestring):
         with io.open(test_dataset, encoding="utf8") as f:
             test_dataset = json.load(f)
 
-    language = train_dataset["language"]
-    engine = engine_class(language)
+    engine = engine_class()
     engine.fit(train_dataset)
     test_utterances = [
         (intent_name, utterance)
-        for intent_name, intent_data in test_dataset[INTENTS].iteritems()
+        for intent_name, intent_data in test_dataset[INTENTS].items()
         for utterance in intent_data[UTTERANCES]
     ]
     metrics, errors = compute_engine_metrics(engine, test_utterances,
                                              slot_matching_lambda)
     metrics = compute_precision_recall(metrics)
     nb_utterances = {intent: len(data[UTTERANCES])
-                     for intent, data in train_dataset[INTENTS].iteritems()}
-    for intent, intent_metrics in metrics.iteritems():
+                     for intent, data in train_dataset[INTENTS].items()}
+    for intent, intent_metrics in metrics.items():
         intent_metrics[INTENT_UTTERANCES] = nb_utterances.get(intent, 0)
     return {
         METRICS: metrics,
