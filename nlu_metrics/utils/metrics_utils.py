@@ -1,3 +1,5 @@
+from __future__ import absolute_import
+from __future__ import division
 from __future__ import unicode_literals
 
 from copy import deepcopy
@@ -6,9 +8,9 @@ import numpy as np
 from sklearn.model_selection import StratifiedShuffleSplit
 from sklearn.utils import check_random_state
 
-from constants import (INTENTS, UTTERANCES, DATA, SLOT_NAME, TEXT,
-                       FALSE_POSITIVE, FALSE_NEGATIVE, ENTITY,
-                       TRUE_POSITIVE)
+from nlu_metrics.utils.constants import (
+    INTENTS, UTTERANCES, DATA, SLOT_NAME, TEXT, FALSE_POSITIVE, FALSE_NEGATIVE,
+    ENTITY, TRUE_POSITIVE)
 from nlu_metrics.utils.dataset_utils import (input_string_from_chunks,
                                              get_utterances_subset)
 from nlu_metrics.utils.exception import NotEnoughDataError
@@ -26,7 +28,7 @@ def create_shuffle_stratified_splits(dataset, n_splits, train_size_ratio=1.0,
                                      seed=None):
     assert 0.0 <= train_size_ratio <= 1.0
     nb_utterances = {intent: len(data[UTTERANCES])
-                     for intent, data in dataset[INTENTS].iteritems()}
+                     for intent, data in dataset[INTENTS].items()}
     total_utterances = sum(nb_utterances.values())
     if total_utterances < n_splits:
         raise NotEnoughDataError("Number of utterances is too low (%s)"
@@ -34,7 +36,7 @@ def create_shuffle_stratified_splits(dataset, n_splits, train_size_ratio=1.0,
     dataset = deepcopy(dataset)
     utterances = np.array([
         (intent_name, utterance)
-        for intent_name, intent_data in dataset[INTENTS].iteritems()
+        for intent_name, intent_data in dataset[INTENTS].items()
         for utterance in intent_data[UTTERANCES]
     ])
     intents = np.array([u[0] for u in utterances])
@@ -102,7 +104,8 @@ def compute_utterance_metrics(parsing, utterance, utterance_intent,
         parsing_intent_name = NONE_INTENT_NAME
 
     parsed_slots = [] if parsing["slots"] is None else parsing["slots"]
-    utterance_slots = filter(lambda chunk: SLOT_NAME in chunk, utterance[DATA])
+    utterance_slots = [chunk for chunk in utterance[DATA] if
+                       SLOT_NAME in chunk]
 
     # initialize metrics
     intent_names = {parsing_intent_name, utterance_intent}
@@ -149,14 +152,14 @@ def compute_utterance_metrics(parsing, utterance, utterance_intent,
 
 def aggregate_metrics(lhs_metrics, rhs_metrics):
     acc_metrics = deepcopy(lhs_metrics)
-    for (intent, intent_metrics) in rhs_metrics.iteritems():
+    for (intent, intent_metrics) in rhs_metrics.items():
         if intent not in acc_metrics:
             acc_metrics[intent] = deepcopy(intent_metrics)
         else:
             acc_metrics[intent]["intent"] = add_count_metrics(
                 acc_metrics[intent]["intent"], intent_metrics["intent"])
             acc_slot_metrics = acc_metrics[intent]["slots"]
-            for (slot, slot_metrics) in intent_metrics["slots"].iteritems():
+            for (slot, slot_metrics) in intent_metrics["slots"].items():
                 if slot not in acc_slot_metrics:
                     acc_slot_metrics[slot] = deepcopy(slot_metrics)
                 else:

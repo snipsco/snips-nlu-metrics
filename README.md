@@ -1,7 +1,5 @@
 # NLU Metrics
 
-[![Build Status](https://jenkins2.snips.ai/buildStatus/icon?job=SDK/asr-lm-adaptation/develop)](https://jenkins2.snips.ai/job/SDK/job/asr-lm-adaptation/view/Branches/job/develop)
-
 Python package to compute metrics on a NLU/ASR parsing pipeline
 
 ## Install

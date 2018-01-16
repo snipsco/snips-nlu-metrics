@@ -25,6 +25,9 @@ class TestDatasetUtils(unittest.TestCase):
 
         # When
         utterances_subset = get_utterances_subset(utterances, ratio=0.5)
+        utterances_subset = sorted(
+            utterances_subset,
+            key=lambda u: "%s%s" % (u[0], u[1]["data"][0]["text"]))
 
         # Then
         expected_utterances = [
@@ -35,4 +38,4 @@ class TestDatasetUtils(unittest.TestCase):
             ("intent3", {"data": [{"text": "text2"}]}),
             ("intent3", {"data": [{"text": "text3"}]}),
         ]
-        self.assertItemsEqual(expected_utterances, utterances_subset)
+        self.assertListEqual(expected_utterances, utterances_subset)

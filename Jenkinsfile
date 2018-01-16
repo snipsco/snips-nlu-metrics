@@ -8,27 +8,19 @@ def version(path) {
 }
 
 
-node('jenkins-slave-generic') {
+node('tobor1') {
     stage('Checkout') {
         deleteDir()
         checkout scm
     }
 
-    stage('Setup') {
-    	sh "virtualenv venv"
-    	def credentials = "${env.NEXUS_USERNAME_PYPI}:${env.NEXUS_PASSWORD_PYPI}"
-    	sh """
-    	${VENV}
-    	echo "[global]\nindex = https://${credentials}@nexus-repository.snips.ai/repository/pypi-internal/pypi\nindex-url = https://pypi.python.org/simple/\nextra-index-url = https://${credentials}@nexus-repository.snips.ai/repository/pypi-internal/simple" >> venv/pip.conf
-    	pip install .[test]
-    	"""
-    }
-
     stage('Tests') {
         sh """
-        ${VENV}
-        python -m unittest discover
-        """
+    	virtualenv venv
+    	${VENV}
+    	pip install tox
+    	tox
+    	"""
     }
 
     stage('Publish') {
@@ -42,8 +34,7 @@ node('jenkins-slave-generic') {
                 sh """
                 virtualenv venv
                 ${VENV}
-                echo "[global]\nindex = https://${credentials}@nexus-repository.snips.ai/repository/pypi-internal/pypi\nindex-url = https://pypi.python.org/simple/\nextra-index-url = https://${credentials}@nexus-repository.snips.ai/repository/pypi-internal/simple" >> venv/pip.conf
-                python setup.py bdist_wheel upload -r pypisnips
+                python setup.py bdist_wheel --universal upload -r pypisnips
                 git tag ${version(path)}
                 git remote rm origin
                 git remote add origin 'git@github.com:snipsco/nlu-metrics.git'

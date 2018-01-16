@@ -1,0 +1,2 @@
+include nlu_metrics/__version__
+global-exclude __pycache__ *.py[cod]
