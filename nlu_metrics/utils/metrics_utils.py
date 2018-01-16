@@ -1,4 +1,5 @@
 from __future__ import unicode_literals
+from __future__ import absolute_import
 
 from copy import deepcopy
 
@@ -6,7 +7,7 @@ import numpy as np
 from sklearn.model_selection import StratifiedShuffleSplit
 from sklearn.utils import check_random_state
 
-from constants import (INTENTS, UTTERANCES, DATA, SLOT_NAME, TEXT,
+from .constants import (INTENTS, UTTERANCES, DATA, SLOT_NAME, TEXT,
                        FALSE_POSITIVE, FALSE_NEGATIVE, ENTITY,
                        TRUE_POSITIVE)
 from nlu_metrics.utils.dataset_utils import (input_string_from_chunks,

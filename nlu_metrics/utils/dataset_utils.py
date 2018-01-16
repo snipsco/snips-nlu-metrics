@@ -1,8 +1,9 @@
 from __future__ import unicode_literals
+from __future__ import absolute_import
 
 from copy import deepcopy
 
-from constants import TEXT
+from .constants import TEXT
 
 
 def input_string_from_chunks(chunks):
