@@ -71,7 +71,7 @@ def compute_cross_val_metrics(dataset, engine_class, nb_folds=5,
 
     """
     if not issubclass(engine_class, Engine):
-        raise TypeError("%s does not inherit from %s" % (engine_class, Engine))
+        print("WARNING: %s does not inherit from %s" % (engine_class, Engine))
 
     if isinstance(dataset, (str, unicode)):
         with io.open(dataset, encoding="utf8") as f:
@@ -166,7 +166,7 @@ def compute_train_test_metrics(train_dataset, test_dataset, engine_class,
         - "parsing_errors": the list of parsing errors
     """
     if not issubclass(engine_class, Engine):
-        raise TypeError("%s does not inherit from %s" % (engine_class, Engine))
+        print("WARNING: %s does not inherit from %s" % (engine_class, Engine))
 
     if isinstance(train_dataset, (str, unicode)):
         with io.open(train_dataset, encoding="utf8") as f:

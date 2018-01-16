@@ -14,6 +14,8 @@ with io.open(os.path.join(PACKAGE_PATH, VERSION)) as f:
     version = f.readline().strip()
 
 install_requires = [
+    "numpy==1.12.1",
+    "scipy==0.19.0",
     "scikit-learn==0.18.1",
 ]
 
