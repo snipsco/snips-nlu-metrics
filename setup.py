@@ -20,8 +20,6 @@ install_requires = [
 extras_require = {
     "test": [
         "mock==2.0.0",
-        "snips_nlu==0.10.0",
-        "snips_nlu_rust==0.51.0",
     ]
 }
 
@@ -33,6 +31,5 @@ setup(name=PACKAGE_NAME,
       extras_require=extras_require,
       install_requires=install_requires,
       packages=packages,
-      package_data={"": [VERSION]},
       include_package_data=True,
       zip_safe=False)

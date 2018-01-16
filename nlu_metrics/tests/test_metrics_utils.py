@@ -2,8 +2,8 @@ from __future__ import unicode_literals
 
 import unittest
 
-from nlu_metrics.utils.constants import TRUE_POSITIVE, FALSE_POSITIVE, \
-    FALSE_NEGATIVE, TEXT
+from nlu_metrics.utils.constants import (TRUE_POSITIVE, FALSE_POSITIVE,
+                                         FALSE_NEGATIVE, TEXT)
 from nlu_metrics.utils.metrics_utils import (aggregate_metrics,
                                              compute_utterance_metrics,
                                              compute_precision_recall,
