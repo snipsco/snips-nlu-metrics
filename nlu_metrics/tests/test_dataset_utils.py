@@ -2,7 +2,8 @@ from __future__ import unicode_literals
 
 import unittest
 
-from nlu_metrics.utils.dataset_utils import get_utterances_subset
+from nlu_metrics.utils.dataset_utils import get_utterances_subset, \
+    update_entities_with_utterances
 
 
 class TestDatasetUtils(unittest.TestCase):
@@ -39,3 +40,116 @@ class TestDatasetUtils(unittest.TestCase):
             ("intent3", {"data": [{"text": "text3"}]}),
         ]
         self.assertListEqual(expected_utterances, utterances_subset)
+
+    def test_update_entities_with_utterances(self):
+        # Given
+        dataset = {
+            "intents": {
+                "intent_1": {
+                    "utterances": [
+                        {
+                            "data": [
+                                {
+                                    "text": "aa",
+                                    "entity": "entity_2"
+                                },
+                                {
+                                    "text": "bb",
+                                    "entity": "entity_2"
+                                }
+                            ]
+                        }
+                    ]
+                },
+                "intent_2": {
+                    "utterances": [
+                        {
+                            "data": [
+                                {
+                                    "text": "cccc",
+                                    "entity": "entity_1"
+                                }
+                            ]
+                        }
+                    ]
+                },
+
+            },
+            "entities": {
+                "entity_1": {
+                    "data": [],
+                    "use_synonyms": False
+                },
+                "entity_2": {
+                    "data": [
+                        {
+                            "value": "a",
+                            "synonyms": ["aa"]
+                        }
+                    ],
+                    "use_synonyms": True
+                }
+            }
+        }
+        # When
+        updated_dataset = update_entities_with_utterances(dataset)
+
+        # Then
+        expected_dataset = {
+            "intents": {
+                "intent_1": {
+                    "utterances": [
+                        {
+                            "data": [
+                                {
+                                    "text": "aa",
+                                    "entity": "entity_2"
+                                },
+                                {
+                                    "text": "bb",
+                                    "entity": "entity_2"
+                                }
+                            ]
+                        }
+                    ]
+                },
+                "intent_2": {
+                    "utterances": [
+                        {
+                            "data": [
+                                {
+                                    "text": "cccc",
+                                    "entity": "entity_1"
+                                }
+                            ]
+                        }
+                    ]
+                },
+
+            },
+            "entities": {
+                "entity_1": {
+                    "data": [
+                        {
+                            "value": "cccc",
+                            "synonyms": []
+                        }
+                    ],
+                    "use_synonyms": False
+                },
+                "entity_2": {
+                    "data": [
+                        {
+                            "value": "a",
+                            "synonyms": ["aa"]
+                        },
+                        {
+                            "value": "bb",
+                            "synonyms": []
+                        }
+                    ],
+                    "use_synonyms": True
+                }
+            }
+        }
+        self.assertDictEqual(expected_dataset, updated_dataset)

@@ -1,24 +1,15 @@
 from __future__ import unicode_literals
 
 from builtins import object
+
 from nlu_metrics import Engine
 
 
 def dummy_parsing_result(text):
     return {
         "input": text,
-        "intent": {
-            "intentName": "test_intent",
-            "probability": 1.0
-        },
-        "slots": [
-            {
-                "rawValue": text,
-                "entity": "mocked_entity",
-                "slotName": "mocked_slot_name",
-                "range": [0, len(text)]
-            }
-        ]
+        "intent": None,
+        "slots": []
     }
 
 
