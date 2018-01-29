@@ -14,10 +14,10 @@ with io.open(os.path.join(PACKAGE_PATH, VERSION)) as f:
     version = f.readline().strip()
 
 install_requires = [
-    "future==0.16.0",
-    "numpy==1.12.1",
-    "scipy==0.19.0",
-    "scikit-learn==0.18.1",
+    "future",
+    "numpy",
+    "scipy",
+    "scikit-learn",
 ]
 
 extras_require = {
