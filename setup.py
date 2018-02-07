@@ -15,9 +15,9 @@ with io.open(os.path.join(PACKAGE_PATH, VERSION)) as f:
 
 install_requires = [
     "future",
-    "numpy",
-    "scipy",
-    "scikit-learn",
+    "numpy==1.14.0",
+    "scipy==1.0.0",
+    "scikit-learn==0.19.1",
 ]
 
 extras_require = {
