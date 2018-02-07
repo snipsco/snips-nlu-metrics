@@ -33,8 +33,8 @@ def compute_cross_val_nlu_metrics(dataset, training_engine_class,
             lambda expected_slot, actual_slot: bool (optional),
             if defined, this function will be use to match slots when computing
             metrics, otherwise exact match will be used.
-            `expected_slot` corresponds to the slot as defined in the dataset, and
-            `actual_slot` corresponds to the slot as returned by the NLU.
+            `expected_slot` corresponds to the slot as defined in the dataset,
+            and `actual_slot` corresponds to the slot as returned by the NLU.
         :param progression_handler: handler called at each progression (%) step
         :return: dict containing the following data
 
@@ -133,8 +133,8 @@ def compute_train_test_nlu_metrics(train_dataset, test_dataset,
             lambda expected_slot, actual_slot: bool (optional),
             if defined, this function will be use to match slots when computing
             metrics, otherwise exact match will be used.
-            `expected_slot` corresponds to the slot as defined in the dataset, and
-            `actual_slot` corresponds to the slot as returned by the NLU.
+            `expected_slot` corresponds to the slot as defined in the dataset,
+            and `actual_slot` corresponds to the slot as returned by the NLU.
         :return: dict containing the following data
 
             - "metrics": the computed metrics
