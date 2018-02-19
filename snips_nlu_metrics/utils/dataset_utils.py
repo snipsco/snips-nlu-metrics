@@ -6,7 +6,7 @@ from copy import deepcopy
 
 from future.utils import iteritems
 
-from nlu_metrics.utils.constants import (
+from snips_nlu_metrics.utils.constants import (
     ENTITIES, DATA, VALUE, USE_SYNONYMS, SYNONYMS, INTENTS, UTTERANCES, ENTITY,
     TEXT)
 

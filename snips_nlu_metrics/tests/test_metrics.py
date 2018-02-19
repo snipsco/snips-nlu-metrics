@@ -5,15 +5,15 @@ import unittest
 
 from mock import patch
 
-from nlu_metrics.engine import build_nlu_engine_class
-from nlu_metrics.metrics import (compute_cross_val_metrics,
-                                 compute_train_test_metrics,
-                                 compute_cross_val_nlu_metrics,
-                                 compute_train_test_nlu_metrics)
-from nlu_metrics.tests.engine_config import NLU_CONFIG
-from nlu_metrics.tests.mock_engine import (MockTrainingEngine,
-                                           MockInferenceEngine)
-from nlu_metrics.utils.constants import METRICS, PARSING_ERRORS
+from snips_nlu_metrics.engine import build_nlu_engine_class
+from snips_nlu_metrics.metrics import (compute_cross_val_metrics,
+                                       compute_train_test_metrics,
+                                       compute_cross_val_nlu_metrics,
+                                       compute_train_test_nlu_metrics)
+from snips_nlu_metrics.tests.engine_config import NLU_CONFIG
+from snips_nlu_metrics.tests.mock_engine import (MockTrainingEngine,
+                                                 MockInferenceEngine)
+from snips_nlu_metrics.utils.constants import METRICS, PARSING_ERRORS
 
 
 class TestMetrics(unittest.TestCase):
@@ -124,7 +124,7 @@ class TestMetrics(unittest.TestCase):
         except Exception as e:
             self.fail(e.args[0])
 
-    @patch('nlu_metrics.metrics.compute_train_test_metrics')
+    @patch('snips_nlu_metrics.metrics.compute_train_test_metrics')
     def test_train_test_nlu_metrics(self, mocked_train_test_metrics):
         # Given
         mocked_metrics_result = {"metrics": "ok"}

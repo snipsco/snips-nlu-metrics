@@ -2,9 +2,10 @@ from __future__ import unicode_literals
 
 import unittest
 
-from nlu_metrics.engine import get_trained_nlu_engine, get_inference_nlu_engine
-from nlu_metrics.tests.mock_engine import MockTrainingEngine, \
-    MockInferenceEngine
+from snips_nlu_metrics.engine import (
+    get_trained_nlu_engine, get_inference_nlu_engine)
+from snips_nlu_metrics.tests.mock_engine import (
+    MockTrainingEngine, MockInferenceEngine)
 
 
 class TestNLUEngine(unittest.TestCase):

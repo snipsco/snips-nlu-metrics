@@ -2,7 +2,7 @@ from __future__ import unicode_literals
 
 from builtins import object
 
-from nlu_metrics import Engine
+from snips_nlu_metrics import Engine
 
 
 def dummy_parsing_result(text):

@@ -9,13 +9,13 @@ from future.utils import iteritems
 from sklearn.model_selection import StratifiedKFold
 from sklearn.utils import check_random_state
 
-from nlu_metrics.utils.constants import (
+from snips_nlu_metrics.utils.constants import (
     INTENTS, UTTERANCES, DATA, SLOT_NAME, TEXT, FALSE_POSITIVE, FALSE_NEGATIVE,
     ENTITY, TRUE_POSITIVE, ENTITIES)
-from nlu_metrics.utils.dataset_utils import (input_string_from_chunks,
-                                             get_utterances_subset,
-                                             update_entities_with_utterances)
-from nlu_metrics.utils.exception import NotEnoughDataError
+from snips_nlu_metrics.utils.dataset_utils import (
+    input_string_from_chunks, get_utterances_subset,
+    update_entities_with_utterances)
+from snips_nlu_metrics.utils.exception import NotEnoughDataError
 
 INITIAL_METRICS = {
     TRUE_POSITIVE: 0,
