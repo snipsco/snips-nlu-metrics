@@ -5,7 +5,7 @@ from __future__ import unicode_literals
 from copy import deepcopy
 
 import numpy as np
-from sklearn.model_selection import StratifiedShuffleSplit
+from sklearn.model_selection import StratifiedKFold
 from sklearn.utils import check_random_state
 
 from nlu_metrics.utils.constants import (
@@ -42,9 +42,8 @@ def create_shuffle_stratified_splits(dataset, n_splits, train_size_ratio=1.0,
     intents = np.array([u[0] for u in utterances])
     X = np.zeros(len(intents))
     random_state = check_random_state(seed)
-    test_size = 1 / float(n_splits)
-    sss = StratifiedShuffleSplit(n_splits=n_splits, test_size=test_size,
-                                 random_state=random_state)
+    sss = StratifiedKFold(n_splits=n_splits, shuffle=True,
+                          random_state=random_state)
     splits = []
     try:
         for train_index, test_index in sss.split(X, intents):
