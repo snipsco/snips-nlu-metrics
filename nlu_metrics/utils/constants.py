@@ -2,8 +2,12 @@ from __future__ import unicode_literals
 
 INTENT = "intent"
 INTENTS = "intents"
+ENTITIES = "entities"
 UTTERANCES = "utterances"
+USE_SYNONYMS = "use_synonyms"
+SYNONYMS = "synonyms"
 DATA = "data"
+VALUE = "value"
 TEXT = "text"
 ENTITY = "entity"
 SLOT_NAME = "slot_name"
