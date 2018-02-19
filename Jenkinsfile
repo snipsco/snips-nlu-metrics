@@ -1,5 +1,5 @@
 def branchName = "${env.BRANCH_NAME}"
-def packagePath = "nlu_metrics"
+def packagePath = "snips_nlu_metrics"
 def VENV = ". venv/bin/activate"
 
 

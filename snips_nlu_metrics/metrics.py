@@ -7,11 +7,11 @@ import json
 
 from past.builtins import basestring
 
-from nlu_metrics.engine import Engine, build_nlu_engine_class
-from nlu_metrics.utils.constants import (
+from snips_nlu_metrics.engine import Engine, build_nlu_engine_class
+from snips_nlu_metrics.utils.constants import (
     INTENTS, UTTERANCES, INTENT_UTTERANCES, PARSING_ERRORS, METRICS)
-from nlu_metrics.utils.exception import NotEnoughDataError
-from nlu_metrics.utils.metrics_utils import (
+from snips_nlu_metrics.utils.exception import NotEnoughDataError
+from snips_nlu_metrics.utils.metrics_utils import (
     create_shuffle_stratified_splits, compute_engine_metrics,
     aggregate_metrics, compute_precision_recall)
 

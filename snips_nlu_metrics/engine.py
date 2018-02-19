@@ -11,7 +11,7 @@ from copy import deepcopy
 
 from future.utils import with_metaclass
 
-from nlu_metrics.utils.temp_utils import tempdir_ctx
+from snips_nlu_metrics.utils.temp_utils import tempdir_ctx
 
 TRAINED_ENGINE_FILENAME = "trained_assistant.json"
 

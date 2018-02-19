@@ -24,7 +24,8 @@ pip install nlu_metrics
 ## Pure NLU Metrics API
 
 ```python
-from nlu_metrics import compute_train_test_nlu_metrics, compute_cross_val_nlu_metrics
+from snips_nlu_metrics import (
+    compute_train_test_nlu_metrics, compute_cross_val_nlu_metrics)
 from snips_nlu import SnipsNLUEngine as NLUTrainingEngine
 from snips_nlu_rust import NLUEngine as NLUInferenceEngine
 
@@ -38,7 +39,7 @@ def prefix_match(lhs_slot, rhs_slot):
 
 tt_metrics = compute_train_test_nlu_metrics(train_dataset="path/to/train_dataset.json", 
                                             test_dataset="path/to/test_dataset.json",
-                                            training_engine_class=NLUTrainingEngine, 
+                                            training_engine_class=NLUTrainingEngine,
                                             inference_engine_class=NLUInferenceEngine,
                                             slot_matching_lambda=prefix_match)
 
@@ -47,6 +48,7 @@ cv_metrics = compute_cross_val_nlu_metrics(dataset="path/to/dataset.json",
                                            inference_engine_class=NLUInferenceEngine, 
                                            nb_folds=5, 
                                            train_size_ratio=0.5,
+                                           drop_entities=False,
                                            slot_matching_lambda=None)
 ```
 
@@ -81,7 +83,7 @@ class Engine(object):
 Here is how you can use the end-to-end metrics API, if you have a `EndToEndEngine` that inherits from `Engine`:
 
 ```python
-from nlu_metrics import compute_train_test_metrics, compute_cross_val_metrics
+from snips_nlu_metrics import compute_train_test_metrics, compute_cross_val_metrics
 
 
 tt_metrics = compute_train_test_metrics(train_dataset="path/to/train_dataset.json", 
@@ -93,5 +95,6 @@ cv_metrics = compute_cross_val_metrics(dataset="path/to/dataset.json",
                                        engine_class=EndToEndEngine, 
                                        nb_folds=5, 
                                        train_size_ratio=0.5,
+                                       drop_entities=False,
                                        slot_matching_lambda=None)
 ```

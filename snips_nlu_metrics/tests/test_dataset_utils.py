@@ -2,7 +2,7 @@ from __future__ import unicode_literals
 
 import unittest
 
-from nlu_metrics.utils.dataset_utils import get_utterances_subset, \
+from snips_nlu_metrics.utils.dataset_utils import get_utterances_subset, \
     update_entities_with_utterances
 
 

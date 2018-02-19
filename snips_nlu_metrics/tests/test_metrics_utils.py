@@ -1,16 +1,17 @@
-from __future__ import unicode_literals
 from __future__ import division
+from __future__ import unicode_literals
 
-from builtins import object
 import unittest
+from builtins import object
 
-from nlu_metrics.utils.constants import (TRUE_POSITIVE, FALSE_POSITIVE,
-                                         FALSE_NEGATIVE, TEXT)
-from nlu_metrics.utils.metrics_utils import (aggregate_metrics,
-                                             compute_utterance_metrics,
-                                             compute_precision_recall,
-                                             exact_match, contains_errors,
-                                             compute_engine_metrics)
+from snips_nlu_metrics.utils.constants import (TRUE_POSITIVE, FALSE_POSITIVE,
+                                               FALSE_NEGATIVE, TEXT)
+from snips_nlu_metrics.utils.metrics_utils import (aggregate_metrics,
+                                                   compute_utterance_metrics,
+                                                   compute_precision_recall,
+                                                   exact_match,
+                                                   contains_errors,
+                                                   compute_engine_metrics)
 
 
 class TestMetricsUtils(unittest.TestCase):
