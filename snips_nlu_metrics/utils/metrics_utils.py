@@ -5,15 +5,17 @@ from __future__ import unicode_literals
 from copy import deepcopy
 
 import numpy as np
-from sklearn.model_selection import StratifiedShuffleSplit
+from future.utils import iteritems
+from sklearn.model_selection import StratifiedKFold
 from sklearn.utils import check_random_state
 
-from nlu_metrics.utils.constants import (
+from snips_nlu_metrics.utils.constants import (
     INTENTS, UTTERANCES, DATA, SLOT_NAME, TEXT, FALSE_POSITIVE, FALSE_NEGATIVE,
-    ENTITY, TRUE_POSITIVE)
-from nlu_metrics.utils.dataset_utils import (input_string_from_chunks,
-                                             get_utterances_subset)
-from nlu_metrics.utils.exception import NotEnoughDataError
+    ENTITY, TRUE_POSITIVE, ENTITIES)
+from snips_nlu_metrics.utils.dataset_utils import (
+    input_string_from_chunks, get_utterances_subset,
+    update_entities_with_utterances)
+from snips_nlu_metrics.utils.exception import NotEnoughDataError
 
 INITIAL_METRICS = {
     TRUE_POSITIVE: 0,
@@ -25,15 +27,24 @@ NONE_INTENT_NAME = "null"
 
 
 def create_shuffle_stratified_splits(dataset, n_splits, train_size_ratio=1.0,
-                                     seed=None):
-    assert 0.0 <= train_size_ratio <= 1.0
+                                     drop_entities=False, seed=None):
+    if train_size_ratio > 1.0 or train_size_ratio < 0:
+        raise ValueError("Invalid value for train size ratio: %s"
+                         % train_size_ratio)
+
     nb_utterances = {intent: len(data[UTTERANCES])
                      for intent, data in dataset[INTENTS].items()}
     total_utterances = sum(nb_utterances.values())
     if total_utterances < n_splits:
         raise NotEnoughDataError("Number of utterances is too low (%s)"
                                  % total_utterances)
-    dataset = deepcopy(dataset)
+    if drop_entities:
+        dataset = deepcopy(dataset)
+        for entity, data in iteritems(dataset[ENTITIES]):
+            data[DATA] = []
+    else:
+        dataset = update_entities_with_utterances(dataset)
+
     utterances = np.array([
         (intent_name, utterance)
         for intent_name, intent_data in dataset[INTENTS].items()
@@ -42,9 +53,8 @@ def create_shuffle_stratified_splits(dataset, n_splits, train_size_ratio=1.0,
     intents = np.array([u[0] for u in utterances])
     X = np.zeros(len(intents))
     random_state = check_random_state(seed)
-    test_size = 1 / float(n_splits)
-    sss = StratifiedShuffleSplit(n_splits=n_splits, test_size=test_size,
-                                 random_state=random_state)
+    sss = StratifiedKFold(n_splits=n_splits, shuffle=True,
+                          random_state=random_state)
     splits = []
     try:
         for train_index, test_index in sss.split(X, intents):
