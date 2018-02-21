@@ -1,2 +1,3 @@
 include snips_nlu_metrics/__version__
+include README.md LICENSE
 global-exclude __pycache__ *.py[cod]
