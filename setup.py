@@ -13,6 +13,9 @@ VERSION = "__version__"
 with io.open(os.path.join(PACKAGE_PATH, VERSION)) as f:
     version = f.readline().strip()
 
+with io.open('README.md', 'rt', encoding='utf8') as f:
+    readme = f.read()
+
 install_requires = [
     "future",
     "numpy==1.14.0",
@@ -27,10 +30,12 @@ extras_require = {
 }
 
 setup(name=PACKAGE_NAME,
+      description="Python package to compute NLU metrics",
+      long_description=readme,
       version=version,
       author="Adrien Ball",
       author_email="adrien.ball@snips.ai",
-      license="All rights reserved",
+      license="MIT license",
       classifiers=[
           "Programming Language :: Python :: 2",
           "Programming Language :: Python :: 2.7",
