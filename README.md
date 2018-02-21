@@ -1,6 +1,6 @@
 # Snips NLU Metrics
 
-[![Build Status](https://travis-ci.org/snipsco/snips-nlu-metrics.svg?branch=develop)](https://travis-ci.org/snipsco/snips-nlu-metrics)
+[![Build Status](https://travis-ci.org/snipsco/snips-nlu-metrics.svg?branch=master)](https://travis-ci.org/snipsco/snips-nlu-metrics)
 
 Python package to compute metrics on a NLU/ASR parsing pipeline
 
