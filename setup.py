@@ -36,7 +36,7 @@ setup(name=PACKAGE_NAME,
       version=version,
       author="Adrien Ball",
       author_email="adrien.ball@snips.ai",
-      license="MIT license",
+      license="Apache 2.0",
       classifiers=[
           "Programming Language :: Python :: 2",
           "Programming Language :: Python :: 2.7",
