@@ -8,7 +8,7 @@ packages = [p for p in find_packages() if "tests" not in p]
 PACKAGE_NAME = "snips_nlu_metrics"
 ROOT_PATH = os.path.dirname(os.path.abspath(__file__))
 PACKAGE_PATH = os.path.join(ROOT_PATH, PACKAGE_NAME)
-README = os.path.join(ROOT_PATH, "README.md")
+README = os.path.join(ROOT_PATH, "README.rst")
 VERSION = "__version__"
 
 with io.open(os.path.join(PACKAGE_PATH, VERSION)) as f:
