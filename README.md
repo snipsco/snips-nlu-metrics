@@ -1,4 +1,4 @@
-# NLU Metrics
+# Snips NLU Metrics
 
 [![Build Status](https://travis-ci.org/snipsco/snips-nlu-metrics.svg?branch=develop)](https://travis-ci.org/snipsco/snips-nlu-metrics)
 
