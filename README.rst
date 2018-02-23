@@ -4,6 +4,13 @@ Snips NLU Metrics
 .. image:: https://travis-ci.org/snipsco/snips-nlu-metrics.svg?branch=master
     :target: https://travis-ci.org/snipsco/snips-nlu-metrics
 
+.. image:: https://img.shields.io/pypi/v/snips-nlu-metrics.svg?branch=master
+    :target: https://pypi.python.org/pypi/snips-nlu-metrics
+
+.. image:: https://img.shields.io/pypi/pyversions/snips-nlu-metrics.svg?branch=master
+    :target: https://pypi.python.org/pypi/snips-nlu-metrics
+
+
 Python package to compute metrics on a NLU/ASR parsing pipeline
 
 Install
