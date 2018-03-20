@@ -31,61 +31,67 @@ class TestMetrics(unittest.TestCase):
 
         # Then
         expected_metrics = {
-            'null': {
-                'intent': {
-                    'true_positive': 0,
-                    'false_positive': 11,
-                    'false_negative': 0,
-                    'precision': 0.0,
-                    'recall': 0.0
+            "null": {
+                "intent": {
+                    "true_positive": 0,
+                    "false_positive": 11,
+                    "false_negative": 0,
+                    "precision": 0.0,
+                    "recall": 0.0,
+                    "f1": 0.0
                 },
-                'slots': {},
-                'intent_utterances': 0
+                "slots": {},
+                "intent_utterances": 0
             },
-            'MakeCoffee': {
-                'intent': {
-                    'true_positive': 0,
-                    'false_positive': 0,
-                    'false_negative': 7,
-                    'precision': 0.0,
-                    'recall': 0.0
+            "MakeCoffee": {
+                "intent": {
+                    "true_positive": 0,
+                    "false_positive": 0,
+                    "false_negative": 7,
+                    "precision": 0.0,
+                    "recall": 0.0,
+                    "f1": 0.0
                 },
-                'slots': {
-                    'number_of_cups': {
-                        'true_positive': 0,
-                        'false_positive': 0,
-                        'false_negative': 0,
-                        'precision': 0.0,
-                        'recall': 0.0
+                "slots": {
+                    "number_of_cups": {
+                        "true_positive": 0,
+                        "false_positive": 0,
+                        "false_negative": 0,
+                        "precision": 0.0,
+                        "recall": 0.0,
+                        "f1": 0.0
                     }
                 },
-                'intent_utterances': 7
+                "intent_utterances": 7
             },
-            'MakeTea': {
-                'intent': {
-                    'true_positive': 0,
-                    'false_positive': 0,
-                    'false_negative': 4,
-                    'precision': 0.0,
-                    'recall': 0.0
+            "MakeTea": {
+                "intent": {
+                    "true_positive": 0,
+                    "false_positive": 0,
+                    "false_negative": 4,
+                    "precision": 0.0,
+                    "recall": 0.0,
+                    "f1": 0.0
                 },
-                'slots': {
-                    'number_of_cups': {
-                        'true_positive': 0,
-                        'false_positive': 0,
-                        'false_negative': 0,
-                        'precision': 0.0,
-                        'recall': 0.0
+                "slots": {
+                    "number_of_cups": {
+                        "true_positive": 0,
+                        "false_positive": 0,
+                        "false_negative": 0,
+                        "precision": 0.0,
+                        "recall": 0.0,
+                        "f1": 0.0
                     },
-                    'beverage_temperature': {
-                        'true_positive': 0,
-                        'false_positive': 0,
-                        'false_negative': 0,
-                        'precision': 0.0,
-                        'recall': 0.0
+                    "beverage_temperature": {
+                        "true_positive": 0,
+                        "false_positive": 0,
+                        "false_negative": 0,
+                        "precision": 0.0,
+                        "recall": 0.0,
+                        "f1": 0.0
                     }
                 },
-                'intent_utterances': 4
+                "intent_utterances": 4
             }
         }
 
@@ -124,7 +130,7 @@ class TestMetrics(unittest.TestCase):
         except Exception as e:
             self.fail(e.args[0])
 
-    @patch('snips_nlu_metrics.metrics.compute_train_test_metrics')
+    @patch("snips_nlu_metrics.metrics.compute_train_test_metrics")
     def test_train_test_nlu_metrics(self, mocked_train_test_metrics):
         # Given
         mocked_metrics_result = {"metrics": "ok"}
