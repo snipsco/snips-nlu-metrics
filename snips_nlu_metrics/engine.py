@@ -17,9 +17,8 @@ TRAINED_ENGINE_FILENAME = "trained_assistant.json"
 
 
 class Engine(with_metaclass(ABCMeta, object)):
-    """
-    Abstract class which represents an engine that can be used in the metrics
-    API. All engine classes must inherit from `Engine`.
+    """Abstract class which represents an engine that can be used in the
+    metrics API. All engine classes must inherit from `Engine`.
     """
 
     @abstractmethod
