@@ -13,7 +13,7 @@ from snips_nlu_metrics.utils.constants import (
 from snips_nlu_metrics.utils.exception import NotEnoughDataError
 from snips_nlu_metrics.utils.metrics_utils import (
     create_shuffle_stratified_splits, compute_engine_metrics,
-    aggregate_metrics, compute_precision_recall)
+    aggregate_metrics, compute_precision_recall_f1)
 
 
 def compute_cross_val_nlu_metrics(dataset, training_engine_class,
@@ -117,7 +117,7 @@ def compute_cross_val_metrics(dataset, engine_class, nb_folds=5,
         if progression_handler is not None:
             progression_handler(float(split_index + 1) / float(total_splits))
 
-    global_metrics = compute_precision_recall(global_metrics)
+    global_metrics = compute_precision_recall_f1(global_metrics)
 
     nb_utterances = {intent: len(data[UTTERANCES])
                      for intent, data in dataset[INTENTS].items()}
@@ -206,7 +206,7 @@ def compute_train_test_metrics(train_dataset, test_dataset, engine_class,
     ]
     metrics, errors = compute_engine_metrics(engine, test_utterances,
                                              slot_matching_lambda)
-    metrics = compute_precision_recall(metrics)
+    metrics = compute_precision_recall_f1(metrics)
     nb_utterances = {intent: len(data[UTTERANCES])
                      for intent, data in train_dataset[INTENTS].items()}
     for intent, intent_metrics in metrics.items():

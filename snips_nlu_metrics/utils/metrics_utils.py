@@ -186,23 +186,31 @@ def add_count_metrics(lhs, rhs):
     }
 
 
-def compute_precision_recall(metrics):
+def compute_precision_recall_f1(metrics):
     for intent_metrics in metrics.values():
-        prec_rec_metrics = _compute_precision_recall(intent_metrics["intent"])
+        prec_rec_metrics = _compute_precision_recall_f1(
+            intent_metrics["intent"])
         intent_metrics["intent"].update(prec_rec_metrics)
         for slot_metrics in intent_metrics["slots"].values():
-            prec_rec_metrics = _compute_precision_recall(slot_metrics)
+            prec_rec_metrics = _compute_precision_recall_f1(slot_metrics)
             slot_metrics.update(prec_rec_metrics)
     return metrics
 
 
-def _compute_precision_recall(count_metrics):
+def _compute_precision_recall_f1(count_metrics):
     tp = count_metrics[TRUE_POSITIVE]
     fp = count_metrics[FALSE_POSITIVE]
     fn = count_metrics[FALSE_NEGATIVE]
+    precision = 0. if tp == 0 else float(tp) / float(tp + fp)
+    recall = 0. if tp == 0 else float(tp) / float(tp + fn)
+    if precision == 0. or recall == 0.:
+        f1 = 0.
+    else:
+        f1 = 2 * (precision * recall) / (precision + recall)
     return {
-        "precision": 0. if tp == 0 else float(tp) / float(tp + fp),
-        "recall": 0. if tp == 0 else float(tp) / float(tp + fn),
+        "precision": precision,
+        "recall": recall,
+        "f1": f1
     }
 
 

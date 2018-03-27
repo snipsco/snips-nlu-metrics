@@ -1,14 +1,15 @@
 from __future__ import division
 from __future__ import unicode_literals
 
-import unittest
 from builtins import object
+
+import unittest
 
 from snips_nlu_metrics.utils.constants import (TRUE_POSITIVE, FALSE_POSITIVE,
                                                FALSE_NEGATIVE, TEXT)
 from snips_nlu_metrics.utils.metrics_utils import (aggregate_metrics,
                                                    compute_utterance_metrics,
-                                                   compute_precision_recall,
+                                                   compute_precision_recall_f1,
                                                    exact_match,
                                                    contains_errors,
                                                    compute_engine_metrics)
@@ -561,7 +562,7 @@ class TestMetricsUtils(unittest.TestCase):
 
         self.assertDictEqual(expected_metrics, aggregated_metrics)
 
-    def test_should_compute_precision_and_recall(self):
+    def test_should_compute_precision_and_recall_and_f1(self):
         # Given
         metrics = {
             "intent1": {
@@ -596,7 +597,7 @@ class TestMetricsUtils(unittest.TestCase):
         }
 
         # When
-        augmented_metrics = compute_precision_recall(metrics)
+        augmented_metrics = compute_precision_recall_f1(metrics)
 
         # Then
         expected_metrics = {
@@ -607,6 +608,8 @@ class TestMetricsUtils(unittest.TestCase):
                     "false_negative": 12,
                     "precision": 9. / (7. + 9.),
                     "recall": 9. / (12. + 9.),
+                    "f1": 2 * (9. / (7. + 9.)) * (9. / (12. + 9.)) / (
+                                9. / (7. + 9.) + 9. / (12. + 9.))
 
                 },
                 "slots":
@@ -617,6 +620,8 @@ class TestMetricsUtils(unittest.TestCase):
                             "false_negative": 4,
                             "precision": 5. / (5. + 3.),
                             "recall": 5. / (5. + 4.),
+                            "f1": 2 * (5. / (5. + 3.)) * (5. / (5. + 4.)) / (
+                                    5. / (5. + 3.) + 5. / (5. + 4.))
                         },
                     }
             },
@@ -627,6 +632,8 @@ class TestMetricsUtils(unittest.TestCase):
                     "false_negative": 11,
                     "precision": 7. / (7. + 7.),
                     "recall": 7. / (7. + 11.),
+                    "f1": 2 * (7. / (7. + 7.)) * (7. / (7. + 11.)) / (
+                            7. / (7. + 7.) + 7. / (7. + 11.))
                 },
                 "slots": {
                     "slot2": {
@@ -635,6 +642,8 @@ class TestMetricsUtils(unittest.TestCase):
                         "false_negative": 2,
                         "precision": 2. / (2. + 4.),
                         "recall": 2. / (2. + 2.),
+                        "f1": 2 * (2. / (2. + 4.)) * (2. / (2. + 2.)) / (
+                                2. / (2. + 4.) + 2. / (2. + 2.))
                     },
                 }
             },
