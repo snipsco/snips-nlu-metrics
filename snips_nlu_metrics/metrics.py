@@ -7,7 +7,7 @@ import json
 
 from past.builtins import basestring
 
-from snips_nlu_metrics.engine import Engine, build_nlu_engine_class
+from snips_nlu_metrics.engine import build_nlu_engine_class
 from snips_nlu_metrics.utils.constants import (
     INTENTS, UTTERANCES, INTENT_UTTERANCES, PARSING_ERRORS, METRICS)
 from snips_nlu_metrics.utils.exception import NotEnoughDataError
@@ -87,8 +87,6 @@ def compute_cross_val_metrics(dataset, engine_class, nb_folds=5,
             - "parsing_errors": the list of parsing errors
 
     """
-    if not issubclass(engine_class, Engine):
-        print("WARNING: %s does not inherit from %s" % (engine_class, Engine))
 
     if isinstance(dataset, basestring):
         with io.open(dataset, encoding="utf8") as f:
@@ -186,8 +184,6 @@ def compute_train_test_metrics(train_dataset, test_dataset, engine_class,
             - "metrics": the computed metrics
             - "parsing_errors": the list of parsing errors
     """
-    if not issubclass(engine_class, Engine):
-        print("WARNING: %s does not inherit from %s" % (engine_class, Engine))
 
     if isinstance(train_dataset, basestring):
         with io.open(train_dataset, encoding="utf8") as f:
