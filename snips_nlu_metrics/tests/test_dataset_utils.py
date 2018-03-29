@@ -10,18 +10,18 @@ class TestDatasetUtils(unittest.TestCase):
     def test_get_utterances_subset_should_work(self):
         # Given
         utterances = [
-            ('intent1', {'data': [{'text': 'text1'}]}),
-            ('intent1', {'data': [{'text': 'text2'}]}),
-            ('intent1', {'data': [{'text': 'text3'}]}),
-            ('intent1', {'data': [{'text': 'text4'}]}),
-            ('intent2', {'data': [{'text': 'text1'}]}),
-            ('intent2', {'data': [{'text': 'text2'}]}),
-            ('intent3', {'data': [{'text': 'text1'}]}),
-            ('intent3', {'data': [{'text': 'text2'}]}),
-            ('intent3', {'data': [{'text': 'text3'}]}),
-            ('intent3', {'data': [{'text': 'text4'}]}),
-            ('intent3', {'data': [{'text': 'text5'}]}),
-            ('intent3', {'data': [{'text': 'text6'}]}),
+            ("intent1", {"data": [{"text": "text1"}]}),
+            ("intent1", {"data": [{"text": "text2"}]}),
+            ("intent1", {"data": [{"text": "text3"}]}),
+            ("intent1", {"data": [{"text": "text4"}]}),
+            ("intent2", {"data": [{"text": "text1"}]}),
+            ("intent2", {"data": [{"text": "text2"}]}),
+            ("intent3", {"data": [{"text": "text1"}]}),
+            ("intent3", {"data": [{"text": "text2"}]}),
+            ("intent3", {"data": [{"text": "text3"}]}),
+            ("intent3", {"data": [{"text": "text4"}]}),
+            ("intent3", {"data": [{"text": "text5"}]}),
+            ("intent3", {"data": [{"text": "text6"}]}),
         ]
 
         # When
