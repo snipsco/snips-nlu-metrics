@@ -108,6 +108,7 @@ You can also compute metrics on a custom NLU engine, here is a simple example:
 
 Links
 -----
+* `Changelog <CHANGELOG.md>`_
 * `Bug tracker <https://github.com/snipsco/snips-nlu-metrics/issues>`_
 * `Snips NLU <https://github.com/snipsco/snips-nlu>`_
 * `Snips NLU Rust <https://github.com/snipsco/snips-nlu-rs>`_: Rust inference pipeline implementation and bindings (C, Swift, Kotlin, Python)
