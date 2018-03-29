@@ -6,13 +6,9 @@ from builtins import object
 
 from snips_nlu_metrics.utils.constants import (TRUE_POSITIVE, FALSE_POSITIVE,
                                                FALSE_NEGATIVE, TEXT)
-from snips_nlu_metrics.utils.metrics_utils import (aggregate_metrics,
-                                                   compute_utterance_metrics,
-                                                   compute_precision_recall_f1,
-                                                   exact_match,
-                                                   contains_errors,
-                                                   compute_engine_metrics,
-                                                   aggregate_matrices)
+from snips_nlu_metrics.utils.metrics_utils import (
+    aggregate_metrics, compute_utterance_metrics, compute_precision_recall_f1,
+    exact_match, contains_errors, compute_engine_metrics, aggregate_matrices)
 
 
 class TestMetricsUtils(unittest.TestCase):
