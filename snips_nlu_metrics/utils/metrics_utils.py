@@ -85,48 +85,63 @@ def not_enough_data(n_splits, train_size_ratio):
                              % (n_splits, train_size_ratio))
 
 
-def compute_engine_metrics(engine, test_utterances, include_slot_metrics,
-                           slot_matching_lambda=None):
+def compute_engine_metrics(engine, test_utterances, intent_list,
+                           include_slot_metrics, slot_matching_lambda=None):
     if slot_matching_lambda is None:
         slot_matching_lambda = exact_match
     metrics = dict()
+    intent_list = intent_list + [NONE_INTENT_NAME]
+    confusion_matrix = dict(
+        intents=intent_list,
+        matrix=[[0 for _ in range(len(intent_list))]
+                for _ in range(len(intent_list))]
+    )
+    intents_idx = {
+        intent_name: idx for idx, intent_name in enumerate(intent_list)
+    }
     errors = []
-    for intent_name, utterance in test_utterances:
+    for actual_intent, utterance in test_utterances:
+        actual_slots = [chunk for chunk in utterance[DATA] if
+                        SLOT_NAME in chunk]
         input_string = input_string_from_chunks(utterance[DATA])
         parsing = engine.parse(input_string)
+
+        if parsing["intent"] is not None:
+            predicted_intent = parsing["intent"]["intentName"]
+        else:
+            # Use a string here to avoid having a None key in the metrics dict
+            predicted_intent = NONE_INTENT_NAME
+
+        predicted_slots = [] if parsing["slots"] is None else parsing["slots"]
+
+        i = intents_idx[actual_intent]
+        j = intents_idx[predicted_intent]
+        confusion_matrix["matrix"][i][j] += 1
+
         utterance_metrics = compute_utterance_metrics(
-            parsing, utterance, intent_name, include_slot_metrics,
-            slot_matching_lambda)
+            predicted_intent, predicted_slots, actual_intent, actual_slots,
+            include_slot_metrics, slot_matching_lambda)
         if contains_errors(utterance_metrics, include_slot_metrics):
             if not include_slot_metrics:
                 parsing.pop("slots")
             errors.append({
                 "nlu_output": parsing,
                 "expected_output": format_expected_output(
-                    intent_name, utterance, include_slot_metrics)
+                    actual_intent, utterance, include_slot_metrics)
             })
         metrics = aggregate_metrics(metrics, utterance_metrics,
                                     include_slot_metrics)
-    return metrics, errors
+    return metrics, errors, confusion_matrix
 
 
-def compute_utterance_metrics(parsing, utterance, utterance_intent,
-                              include_slot_metrics, slot_matching_lambda):
-    if parsing["intent"] is not None:
-        parsing_intent_name = parsing["intent"]["intentName"]
-    else:
-        # Use a string here to avoid having a None key in the metrics dict
-        parsing_intent_name = NONE_INTENT_NAME
-
-    parsed_slots = [] if parsing["slots"] is None else parsing["slots"]
-    utterance_slots = [chunk for chunk in utterance[DATA] if
-                       SLOT_NAME in chunk]
-
+def compute_utterance_metrics(predicted_intent, predicted_slots, actual_intent,
+                              actual_slots, include_slot_metrics,
+                              slot_matching_lambda):
     # initialize metrics
-    intent_names = {parsing_intent_name, utterance_intent}
+    intent_names = {predicted_intent, actual_intent}
     slot_names = set(
-        [(parsing_intent_name, s["slotName"]) for s in parsed_slots] +
-        [(utterance_intent, u[SLOT_NAME]) for u in utterance_slots])
+        [(predicted_intent, s["slotName"]) for s in predicted_slots] +
+        [(actual_intent, u[SLOT_NAME]) for u in actual_slots])
 
     metrics = dict()
     for intent in intent_names:
@@ -139,32 +154,32 @@ def compute_utterance_metrics(parsing, utterance, utterance_intent,
             metrics[intent_name]["slots"][slot_name] = deepcopy(
                 INITIAL_METRICS)
 
-    if parsing_intent_name == utterance_intent:
-        metrics[parsing_intent_name]["intent"][TRUE_POSITIVE] += 1
+    if predicted_intent == actual_intent:
+        metrics[predicted_intent]["intent"][TRUE_POSITIVE] += 1
     else:
-        metrics[parsing_intent_name]["intent"][FALSE_POSITIVE] += 1
-        metrics[utterance_intent]["intent"][FALSE_NEGATIVE] += 1
+        metrics[predicted_intent]["intent"][FALSE_POSITIVE] += 1
+        metrics[actual_intent]["intent"][FALSE_NEGATIVE] += 1
         return metrics
 
     if not include_slot_metrics:
         return metrics
 
     # Check if expected slots have been parsed
-    for slot in utterance_slots:
+    for slot in actual_slots:
         slot_name = slot[SLOT_NAME]
-        slot_metrics = metrics[utterance_intent]["slots"][slot_name]
+        slot_metrics = metrics[actual_intent]["slots"][slot_name]
         if any(s["slotName"] == slot_name and slot_matching_lambda(slot, s)
-               for s in parsed_slots):
+               for s in predicted_slots):
             slot_metrics[TRUE_POSITIVE] += 1
         else:
             slot_metrics[FALSE_NEGATIVE] += 1
 
     # Check if there are unexpected parsed slots
-    for slot in parsed_slots:
+    for slot in predicted_slots:
         slot_name = slot["slotName"]
-        slot_metrics = metrics[parsing_intent_name]["slots"][slot_name]
+        slot_metrics = metrics[predicted_intent]["slots"][slot_name]
         if all(s[SLOT_NAME] != slot_name or not slot_matching_lambda(s, slot)
-               for s in utterance_slots):
+               for s in actual_slots):
             slot_metrics[FALSE_POSITIVE] += 1
     return metrics
 
@@ -187,6 +202,19 @@ def aggregate_metrics(lhs_metrics, rhs_metrics, include_slot_metrics):
                     acc_slot_metrics[slot] = add_count_metrics(
                         acc_slot_metrics[slot], slot_metrics)
     return acc_metrics
+
+
+def aggregate_matrices(lhs_matrix, rhs_matrix):
+    if lhs_matrix is None:
+        return rhs_matrix
+    if rhs_matrix is None:
+        return lhs_matrix
+    acc_matrix = deepcopy(lhs_matrix)
+    matrix_size = len(acc_matrix["matrix"])
+    for i in range(matrix_size):
+        for j in range(matrix_size):
+            acc_matrix["matrix"][i][j] += rhs_matrix["matrix"][i][j]
+    return acc_matrix
 
 
 def add_count_metrics(lhs, rhs):

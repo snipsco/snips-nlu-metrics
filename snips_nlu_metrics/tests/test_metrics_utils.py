@@ -11,7 +11,8 @@ from snips_nlu_metrics.utils.metrics_utils import (aggregate_metrics,
                                                    compute_precision_recall_f1,
                                                    exact_match,
                                                    contains_errors,
-                                                   compute_engine_metrics)
+                                                   compute_engine_metrics,
+                                                   aggregate_matrices)
 
 
 class TestMetricsUtils(unittest.TestCase):
@@ -80,9 +81,10 @@ class TestMetricsUtils(unittest.TestCase):
             return lhs[TEXT] == rhs["rawValue"]
 
         # When
-        metrics, errors = compute_engine_metrics(
+        metrics, errors, confusion_matrix = compute_engine_metrics(
             engine=engine, test_utterances=utterances,
-            include_slot_metrics=True, slot_matching_lambda=slots_match)
+            intent_list=["intent1", "intent2"], include_slot_metrics=True,
+            slot_matching_lambda=slots_match)
 
         # Then
         expected_metrics = {
@@ -236,38 +238,49 @@ class TestMetricsUtils(unittest.TestCase):
                 }
             }
         ]
+
+        expected_confusion_matrix = {
+            "intents": [
+                "intent1",
+                "intent2",
+                "null"
+            ],
+            "matrix": [
+                [2, 1, 0],
+                [0, 2, 0],
+                [0, 0, 0],
+            ]
+        }
+
         self.assertDictEqual(expected_metrics, metrics)
         self.assertListEqual(expected_errors, errors)
+        self.assertDictEqual(expected_confusion_matrix, confusion_matrix)
 
     def test_should_compute_utterance_metrics_when_wrong_intent(self):
         # Given
         text = "utterance of intent1"
-        parsing = {
-            "text": text,
-            "intent": {
-                "intentName": "intent2",
-                "probability": 0.32
-            },
-            "slots": [
-                {
-                    "rawValue": "utterance",
-                    "value": {
-                        "kind": "Custom",
-                        "value": "utterance"
-                    },
-                    "range": {
-                        "start": 0,
-                        "end": 9
-                    },
-                    "entity": "erroneous_entity",
-                    "slotName": "erroneous_slot"
-                }
-            ]
-        }
-        utterance = {"data": [{"text": text}]}
-        intent_name = "intent1"
+        actual_intent = "intent1"
+        actual_slots = []
+        predicted_intent = "intent2"
+        predicted_slots = [
+            {
+                "rawValue": "utterance",
+                "value": {
+                    "kind": "Custom",
+                    "value": "utterance"
+                },
+                "range": {
+                    "start": 0,
+                    "end": 9
+                },
+                "entity": "erroneous_entity",
+                "slotName": "erroneous_slot"
+            }
+        ]
+
         # When
-        metrics = compute_utterance_metrics(parsing, utterance, intent_name,
+        metrics = compute_utterance_metrics(predicted_intent, predicted_slots,
+                                            actual_intent, actual_slots,
                                             True, exact_match)
         # Then
         expected_metrics = {
@@ -300,52 +313,40 @@ class TestMetricsUtils(unittest.TestCase):
     def test_should_compute_utterance_metrics_when_correct_intent(self):
         # Given
         text = "this is intent1 with slot1_value and slot2_value"
-        intent_name = "intent1"
-        parsing = {
-            "text": text,
-            "intent": {
-                "intentName": intent_name,
-                "probability": 0.32
+        actual_intent = "intent1"
+        actual_slots = [
+            {
+                "text": "slot1_value",
+                "entity": "entity1",
+                "slot_name": "slot1"
             },
-            "slots": [
-                {
-                    "rawValue": "slot1_value",
-                    "value": {
-                        "kind": "Custom",
-                        "value": "slot1_value"
-                    },
-                    "range": {
-                        "start": 21,
-                        "end": 32
-                    },
-                    "entity": "entity1",
-                    "slotName": "slot1"
-                }
-            ]
-        }
-        utterance = {
-            "data": [
-                {
-                    "text": "this is intent1 with "
+            {
+                "text": "slot2_value",
+                "entity": "entity2",
+                "slot_name": "slot2"
+            }
+        ]
+        predicted_intent = actual_intent
+        predicted_slots = [
+            {
+                "rawValue": "slot1_value",
+                "value": {
+                    "kind": "Custom",
+                    "value": "slot1_value"
                 },
-                {
-                    "text": "slot1_value",
-                    "entity": "entity1",
-                    "slot_name": "slot1"
+                "range": {
+                    "start": 21,
+                    "end": 32
                 },
-                {
-                    "text": " and "
-                },
-                {
-                    "text": "slot2_value",
-                    "entity": "entity2",
-                    "slot_name": "slot2"
-                }
-            ]
-        }
+                "entity": "entity1",
+                "slotName": "slot1"
+            }
+        ]
+
         # When
-        metrics = compute_utterance_metrics(parsing, utterance, intent_name,
-                                            True, exact_match)
+        metrics = compute_utterance_metrics(predicted_intent, predicted_slots,
+                                            actual_intent, actual_slots, True,
+                                            exact_match)
         # Then
         expected_metrics = {
             "intent1": {
@@ -374,52 +375,37 @@ class TestMetricsUtils(unittest.TestCase):
     def test_should_exclude_slot_metrics_when_specified(self):
         # Given
         text = "this is intent1 with slot1_value and slot2_value"
-        intent_name = "intent1"
-        parsing = {
-            "text": text,
-            "intent": {
-                "intentName": intent_name,
-                "probability": 0.32
+        actual_intent = "intent1"
+        actual_slots = [
+            {
+                "text": "slot1_value",
+                "entity": "entity1",
+                "slot_name": "slot1"
             },
-            "slots": [
-                {
-                    "rawValue": "slot1_value",
-                    "value": {
-                        "kind": "Custom",
-                        "value": "slot1_value"
-                    },
-                    "range": {
-                        "start": 21,
-                        "end": 32
-                    },
-                    "entity": "entity1",
-                    "slotName": "slot1"
-                }
-            ]
-        }
-        utterance = {
-            "data": [
-                {
-                    "text": "this is intent1 with "
+            {
+                "text": "slot2_value",
+                "entity": "entity2",
+                "slot_name": "slot2"
+            }
+        ]
+        predicted_intent = actual_intent
+        predicted_slots = [
+            {
+                "rawValue": "slot1_value",
+                "value": {
+                    "kind": "Custom",
+                    "value": "slot1_value"
                 },
-                {
-                    "text": "slot1_value",
-                    "entity": "entity1",
-                    "slot_name": "slot1"
-                },
-                {
-                    "text": " and "
-                },
-                {
-                    "text": "slot2_value",
-                    "entity": "entity2",
-                    "slot_name": "slot2"
-                }
-            ]
-        }
+                "range": {"start": 21, "end": 32},
+                "entity": "entity1",
+                "slotName": "slot1"
+            }
+        ]
+
         # When
         include_slot_metrics = False
-        metrics = compute_utterance_metrics(parsing, utterance, intent_name,
+        metrics = compute_utterance_metrics(predicted_intent, predicted_slots,
+                                            actual_intent, actual_slots,
                                             include_slot_metrics, exact_match)
         # Then
         expected_metrics = {
@@ -437,55 +423,42 @@ class TestMetricsUtils(unittest.TestCase):
     def test_should_use_slot_matching_lambda_to_compute_metrics(self):
         # Given
         text = "this is intent1 with slot1_value and slot2_value"
-        intent_name = "intent1"
-        parsing = {
-            "text": text,
-            "intent": {
-                "intentName": intent_name,
-                "probability": 0.32
+        actual_intent = "intent1"
+        actual_slots = [
+            {
+                "text": "slot1_value2",
+                "entity": "entity1",
+                "slot_name": "slot1"
             },
-            "slots": [
-                {
-                    "rawValue": "slot1_value",
-                    "value": {
-                        "kind": "Custom",
-                        "value": "slot1_value"
-                    },
-                    "range": {
-                        "start": 21,
-                        "end": 32
-                    },
-                    "entity": "entity1",
-                    "slotName": "slot1"
-                }
-            ]
-        }
-        utterance = {
-            "data": [
-                {
-                    "text": "this is intent1 with "
+            {
+                "text": "slot2_value",
+                "entity": "entity2",
+                "slot_name": "slot2"
+            }
+        ]
+        predicted_intent = actual_intent
+        predicted_slots = [
+            {
+                "rawValue": "slot1_value",
+                "value": {
+                    "kind": "Custom",
+                    "value": "slot1_value"
                 },
-                {
-                    "text": "slot1_value2",
-                    "entity": "entity1",
-                    "slot_name": "slot1"
+                "range": {
+                    "start": 21,
+                    "end": 32
                 },
-                {
-                    "text": " and "
-                },
-                {
-                    "text": "slot2_value",
-                    "entity": "entity2",
-                    "slot_name": "slot2"
-                }
-            ]
-        }
+                "entity": "entity1",
+                "slotName": "slot1"
+            }
+        ]
 
         def slot_matching_lambda(l, r):
             return l[TEXT].split("_")[0] == r["rawValue"].split("_")[0]
 
         # When
-        metrics = compute_utterance_metrics(parsing, utterance, intent_name,
+        metrics = compute_utterance_metrics(predicted_intent, predicted_slots,
+                                            actual_intent, actual_slots,
                                             True, slot_matching_lambda)
         # Then
         expected_metrics = {
@@ -851,3 +824,51 @@ class TestMetricsUtils(unittest.TestCase):
 
         # Then
         self.assertFalse(res)
+
+    def test_aggregate_matrix(self):
+        # Given
+        lhs_confusion_matrix = {
+            "intents": [
+                "intent1",
+                "intent2",
+                "intent3"
+            ],
+            "matrix": [
+                [1, 10, 5],
+                [3, 0, 4],
+                [7, 8, 1]
+            ]
+        }
+
+        rhs_confusion_matrix = {
+            "intents": [
+                "intent1",
+                "intent2",
+                "intent3"
+            ],
+            "matrix": [
+                [3, 3, 3],
+                [2, 7, 1],
+                [9, 0, 1]
+            ]
+        }
+
+        # When
+        acc_matrix = aggregate_matrices(lhs_confusion_matrix,
+                                        rhs_confusion_matrix)
+
+        # Then
+        expected_confusion_matrix = {
+            "intents": [
+                "intent1",
+                "intent2",
+                "intent3"
+            ],
+            "matrix": [
+                [4, 13, 8],
+                [5, 7, 5],
+                [16, 8, 2]
+            ]
+        }
+
+        self.assertDictEqual(expected_confusion_matrix, acc_matrix)

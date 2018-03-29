@@ -9,11 +9,12 @@ from past.builtins import basestring
 
 from snips_nlu_metrics.engine import build_nlu_engine_class
 from snips_nlu_metrics.utils.constants import (
-    INTENTS, UTTERANCES, INTENT_UTTERANCES, PARSING_ERRORS, METRICS)
+    INTENTS, UTTERANCES, INTENT_UTTERANCES, PARSING_ERRORS, METRICS,
+    CONFUSION_MATRIX)
 from snips_nlu_metrics.utils.exception import NotEnoughDataError
 from snips_nlu_metrics.utils.metrics_utils import (
     create_shuffle_stratified_splits, compute_engine_metrics,
-    aggregate_metrics, compute_precision_recall_f1)
+    aggregate_metrics, compute_precision_recall_f1, aggregate_matrices)
 
 
 def compute_cross_val_nlu_metrics(dataset, training_engine_class,
@@ -109,18 +110,22 @@ def compute_cross_val_metrics(dataset, engine_class, nb_folds=5,
             METRICS: None,
             PARSING_ERRORS: []
         }
-    global_metrics = dict()
 
+    intent_list = sorted(list(dataset["intents"]))
+    global_metrics = dict()
+    global_confusion_matrix = None
     global_errors = []
     total_splits = len(splits)
     for split_index, (train_dataset, test_utterances) in enumerate(splits):
         engine = engine_class()
         engine.fit(train_dataset)
-        split_metrics, errors = compute_engine_metrics(
-            engine, test_utterances, include_slot_metrics,
+        split_metrics, errors, confusion_matrix = compute_engine_metrics(
+            engine, test_utterances, intent_list, include_slot_metrics,
             slot_matching_lambda)
         global_metrics = aggregate_metrics(global_metrics, split_metrics,
                                            include_slot_metrics)
+        global_confusion_matrix = aggregate_matrices(global_confusion_matrix,
+                                                     confusion_matrix)
         global_errors += errors
         if progression_handler is not None:
             progression_handler(float(split_index + 1) / float(total_splits))
@@ -134,7 +139,8 @@ def compute_cross_val_metrics(dataset, engine_class, nb_folds=5,
 
     return {
         METRICS: global_metrics,
-        PARSING_ERRORS: global_errors
+        PARSING_ERRORS: global_errors,
+        CONFUSION_MATRIX: global_confusion_matrix
     }
 
 
@@ -210,6 +216,10 @@ def compute_train_test_metrics(train_dataset, test_dataset, engine_class,
         with io.open(test_dataset, encoding="utf8") as f:
             test_dataset = json.load(f)
 
+    intent_list = set(train_dataset["intents"])
+    intent_list.update(test_dataset["intents"])
+    intent_list = sorted(intent_list)
+
     engine = engine_class()
     engine.fit(train_dataset)
     test_utterances = [
@@ -217,8 +227,9 @@ def compute_train_test_metrics(train_dataset, test_dataset, engine_class,
         for intent_name, intent_data in test_dataset[INTENTS].items()
         for utterance in intent_data[UTTERANCES]
     ]
-    metrics, errors = compute_engine_metrics(
-        engine, test_utterances, include_slot_metrics, slot_matching_lambda)
+    metrics, errors, confusion_matrix = compute_engine_metrics(
+        engine, test_utterances, intent_list, include_slot_metrics,
+        slot_matching_lambda)
     metrics = compute_precision_recall_f1(metrics)
     nb_utterances = {intent: len(data[UTTERANCES])
                      for intent, data in train_dataset[INTENTS].items()}
@@ -226,5 +237,6 @@ def compute_train_test_metrics(train_dataset, test_dataset, engine_class,
         intent_metrics[INTENT_UTTERANCES] = nb_utterances.get(intent, 0)
     return {
         METRICS: metrics,
-        PARSING_ERRORS: errors
+        PARSING_ERRORS: errors,
+        CONFUSION_MATRIX: confusion_matrix
     }
