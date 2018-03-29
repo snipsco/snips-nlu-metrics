@@ -1,9 +1,8 @@
 from __future__ import division
 from __future__ import unicode_literals
 
-from builtins import object
-
 import unittest
+from builtins import object
 
 from snips_nlu_metrics.utils.constants import (TRUE_POSITIVE, FALSE_POSITIVE,
                                                FALSE_NEGATIVE, TEXT)
@@ -83,7 +82,7 @@ class TestMetricsUtils(unittest.TestCase):
         # When
         metrics, errors = compute_engine_metrics(
             engine=engine, test_utterances=utterances,
-            slot_matching_lambda=slots_match)
+            include_slot_metrics=True, slot_matching_lambda=slots_match)
 
         # Then
         expected_metrics = {
@@ -269,7 +268,7 @@ class TestMetricsUtils(unittest.TestCase):
         intent_name = "intent1"
         # When
         metrics = compute_utterance_metrics(parsing, utterance, intent_name,
-                                            exact_match)
+                                            True, exact_match)
         # Then
         expected_metrics = {
             "intent1": {
@@ -346,7 +345,7 @@ class TestMetricsUtils(unittest.TestCase):
         }
         # When
         metrics = compute_utterance_metrics(parsing, utterance, intent_name,
-                                            exact_match)
+                                            True, exact_match)
         # Then
         expected_metrics = {
             "intent1": {
@@ -366,6 +365,69 @@ class TestMetricsUtils(unittest.TestCase):
                         "false_positive": 0,
                         "true_positive": 0
                     }
+                }
+            }
+        }
+
+        self.assertDictEqual(expected_metrics, metrics)
+
+    def test_should_exclude_slot_metrics_when_specified(self):
+        # Given
+        text = "this is intent1 with slot1_value and slot2_value"
+        intent_name = "intent1"
+        parsing = {
+            "text": text,
+            "intent": {
+                "intentName": intent_name,
+                "probability": 0.32
+            },
+            "slots": [
+                {
+                    "rawValue": "slot1_value",
+                    "value": {
+                        "kind": "Custom",
+                        "value": "slot1_value"
+                    },
+                    "range": {
+                        "start": 21,
+                        "end": 32
+                    },
+                    "entity": "entity1",
+                    "slotName": "slot1"
+                }
+            ]
+        }
+        utterance = {
+            "data": [
+                {
+                    "text": "this is intent1 with "
+                },
+                {
+                    "text": "slot1_value",
+                    "entity": "entity1",
+                    "slot_name": "slot1"
+                },
+                {
+                    "text": " and "
+                },
+                {
+                    "text": "slot2_value",
+                    "entity": "entity2",
+                    "slot_name": "slot2"
+                }
+            ]
+        }
+        # When
+        include_slot_metrics = False
+        metrics = compute_utterance_metrics(parsing, utterance, intent_name,
+                                            include_slot_metrics, exact_match)
+        # Then
+        expected_metrics = {
+            "intent1": {
+                "intent": {
+                    "false_negative": 0,
+                    "false_positive": 0,
+                    "true_positive": 1
                 }
             }
         }
@@ -424,7 +486,7 @@ class TestMetricsUtils(unittest.TestCase):
 
         # When
         metrics = compute_utterance_metrics(parsing, utterance, intent_name,
-                                            slot_matching_lambda)
+                                            True, slot_matching_lambda)
         # Then
         expected_metrics = {
             "intent1": {
@@ -517,7 +579,7 @@ class TestMetricsUtils(unittest.TestCase):
         }
 
         # When
-        aggregated_metrics = aggregate_metrics(lhs_metrics, rhs_metrics)
+        aggregated_metrics = aggregate_metrics(lhs_metrics, rhs_metrics, True)
 
         # Then
         expected_metrics = {
@@ -609,7 +671,7 @@ class TestMetricsUtils(unittest.TestCase):
                     "precision": 9. / (7. + 9.),
                     "recall": 9. / (12. + 9.),
                     "f1": 2 * (9. / (7. + 9.)) * (9. / (12. + 9.)) / (
-                                9. / (7. + 9.) + 9. / (12. + 9.))
+                            9. / (7. + 9.) + 9. / (12. + 9.))
 
                 },
                 "slots":
@@ -678,7 +740,7 @@ class TestMetricsUtils(unittest.TestCase):
         }
 
         # When
-        res = contains_errors(utterance_metrics)
+        res = contains_errors(utterance_metrics, True)
 
         # Then
         self.assertTrue(res)
@@ -716,7 +778,7 @@ class TestMetricsUtils(unittest.TestCase):
         }
 
         # When
-        res = contains_errors(utterance_metrics)
+        res = contains_errors(utterance_metrics, True)
 
         # Then
         self.assertTrue(res)
@@ -754,7 +816,38 @@ class TestMetricsUtils(unittest.TestCase):
         }
 
         # When
-        res = contains_errors(utterance_metrics)
+        res = contains_errors(utterance_metrics, True)
+
+        # Then
+        self.assertFalse(res)
+
+    def test_contains_errors_should_not_check_slots_when_specified(self):
+        # Given
+        utterance_metrics = {
+            "intent1": {
+                "intent": {
+                    TRUE_POSITIVE: 5,
+                    FALSE_POSITIVE: 0,
+                    FALSE_NEGATIVE: 0
+                },
+                "slots": {
+                    "slot1": {
+                        TRUE_POSITIVE: 3,
+                        FALSE_POSITIVE: 0,
+                        FALSE_NEGATIVE: 0
+                    },
+                    "slot2": {
+                        TRUE_POSITIVE: 3,
+                        FALSE_POSITIVE: 0,
+                        FALSE_NEGATIVE: 2
+                    },
+                }
+            }
+        }
+
+        # When
+        check_slots = False
+        res = contains_errors(utterance_metrics, check_slots)
 
         # Then
         self.assertFalse(res)

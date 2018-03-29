@@ -20,6 +20,7 @@ def compute_cross_val_nlu_metrics(dataset, training_engine_class,
                                   inference_engine_class, nb_folds=5,
                                   train_size_ratio=1.0,
                                   drop_entities=False,
+                                  include_slot_metrics=True,
                                   slot_matching_lambda=None,
                                   progression_handler=None):
     """Compute pure NLU metrics on the dataset using cross validation
@@ -33,6 +34,8 @@ def compute_cross_val_nlu_metrics(dataset, training_engine_class,
             for training
         drop_entities (bool, false): Specify whether not all entity values
             should be removed from training data
+        include_slot_metrics (bool, true): If false, the slots metrics and the
+            slots parsing errors will not be reported.
         slot_matching_lambda (lambda, optional):
             lambda expected_slot, actual_slot -> bool,
             if defined, this function will be use to match slots when computing
@@ -53,11 +56,14 @@ def compute_cross_val_nlu_metrics(dataset, training_engine_class,
                                           inference_engine_class)
     return compute_cross_val_metrics(dataset, engine_class, nb_folds,
                                      train_size_ratio, drop_entities,
-                                     slot_matching_lambda, progression_handler)
+                                     include_slot_metrics,
+                                     slot_matching_lambda,
+                                     progression_handler)
 
 
 def compute_cross_val_metrics(dataset, engine_class, nb_folds=5,
                               train_size_ratio=1.0, drop_entities=False,
+                              include_slot_metrics=True,
                               slot_matching_lambda=None,
                               progression_handler=None):
     """Compute end-to-end metrics on the dataset using cross validation
@@ -71,6 +77,8 @@ def compute_cross_val_metrics(dataset, engine_class, nb_folds=5,
             training (default=5)
         drop_entities (bool, false): Specify whether not all entity values
             should be removed from training data
+        include_slot_metrics (bool, true): If false, the slots metrics and the
+            slots parsing errors will not be reported.
         slot_matching_lambda (lambda, optional):
             lambda expected_slot, actual_slot -> bool,
             if defined, this function will be use to match slots when computing
@@ -108,9 +116,11 @@ def compute_cross_val_metrics(dataset, engine_class, nb_folds=5,
     for split_index, (train_dataset, test_utterances) in enumerate(splits):
         engine = engine_class()
         engine.fit(train_dataset)
-        split_metrics, errors = compute_engine_metrics(engine, test_utterances,
-                                                       slot_matching_lambda)
-        global_metrics = aggregate_metrics(global_metrics, split_metrics)
+        split_metrics, errors = compute_engine_metrics(
+            engine, test_utterances, include_slot_metrics,
+            slot_matching_lambda)
+        global_metrics = aggregate_metrics(global_metrics, split_metrics,
+                                           include_slot_metrics)
         global_errors += errors
         if progression_handler is not None:
             progression_handler(float(split_index + 1) / float(total_splits))
@@ -131,6 +141,7 @@ def compute_cross_val_metrics(dataset, engine_class, nb_folds=5,
 def compute_train_test_nlu_metrics(train_dataset, test_dataset,
                                    training_engine_class,
                                    inference_engine_class,
+                                   include_slot_metrics=True,
                                    slot_matching_lambda=None):
     """Compute pure NLU metrics on `test_dataset` after having trained on
     `train_dataset`
@@ -141,6 +152,8 @@ def compute_train_test_nlu_metrics(train_dataset, test_dataset,
         test_dataset (dict or str): Dataset or path to dataset used for testing
         training_engine_class: Python class to use for training
         inference_engine_class: Python class to use for inference
+        include_slot_metrics (bool, true): If false, the slots metrics and the
+            slots parsing errors will not be reported.
         slot_matching_lambda (lambda, optional):
             lambda expected_slot, actual_slot -> bool,
             if defined, this function will be use to match slots when computing
@@ -157,10 +170,12 @@ def compute_train_test_nlu_metrics(train_dataset, test_dataset,
     engine_class = build_nlu_engine_class(training_engine_class,
                                           inference_engine_class)
     return compute_train_test_metrics(train_dataset, test_dataset,
-                                      engine_class, slot_matching_lambda)
+                                      engine_class, include_slot_metrics,
+                                      slot_matching_lambda)
 
 
 def compute_train_test_metrics(train_dataset, test_dataset, engine_class,
+                               include_slot_metrics=True,
                                slot_matching_lambda=None):
     """Compute end-to-end metrics on `test_dataset` after having trained on
     `train_dataset`
@@ -171,6 +186,8 @@ def compute_train_test_metrics(train_dataset, test_dataset, engine_class,
         test_dataset (dict or str): dataset or path to dataset used for testing
         engine_class: Python class to use for training and inference, this
             class must inherit from `Engine`
+        include_slot_metrics (bool, true): If false, the slots metrics and the
+            slots parsing errors will not be reported.
         slot_matching_lambda (lambda, optional):
             lambda expected_slot, actual_slot -> bool,
             if defined, this function will be use to match slots when computing
@@ -200,8 +217,8 @@ def compute_train_test_metrics(train_dataset, test_dataset, engine_class,
         for intent_name, intent_data in test_dataset[INTENTS].items()
         for utterance in intent_data[UTTERANCES]
     ]
-    metrics, errors = compute_engine_metrics(engine, test_utterances,
-                                             slot_matching_lambda)
+    metrics, errors = compute_engine_metrics(
+        engine, test_utterances, include_slot_metrics, slot_matching_lambda)
     metrics = compute_precision_recall_f1(metrics)
     nb_utterances = {intent: len(data[UTTERANCES])
                      for intent, data in train_dataset[INTENTS].items()}

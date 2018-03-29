@@ -85,7 +85,8 @@ def not_enough_data(n_splits, train_size_ratio):
                              % (n_splits, train_size_ratio))
 
 
-def compute_engine_metrics(engine, test_utterances, slot_matching_lambda=None):
+def compute_engine_metrics(engine, test_utterances, include_slot_metrics,
+                           slot_matching_lambda=None):
     if slot_matching_lambda is None:
         slot_matching_lambda = exact_match
     metrics = dict()
@@ -94,19 +95,23 @@ def compute_engine_metrics(engine, test_utterances, slot_matching_lambda=None):
         input_string = input_string_from_chunks(utterance[DATA])
         parsing = engine.parse(input_string)
         utterance_metrics = compute_utterance_metrics(
-            parsing, utterance, intent_name, slot_matching_lambda)
-        if contains_errors(utterance_metrics):
+            parsing, utterance, intent_name, include_slot_metrics,
+            slot_matching_lambda)
+        if contains_errors(utterance_metrics, include_slot_metrics):
+            if not include_slot_metrics:
+                parsing.pop("slots")
             errors.append({
                 "nlu_output": parsing,
-                "expected_output": format_expected_output(intent_name,
-                                                          utterance)
+                "expected_output": format_expected_output(
+                    intent_name, utterance, include_slot_metrics)
             })
-        metrics = aggregate_metrics(metrics, utterance_metrics)
+        metrics = aggregate_metrics(metrics, utterance_metrics,
+                                    include_slot_metrics)
     return metrics, errors
 
 
 def compute_utterance_metrics(parsing, utterance, utterance_intent,
-                              slot_matching_lambda):
+                              include_slot_metrics, slot_matching_lambda):
     if parsing["intent"] is not None:
         parsing_intent_name = parsing["intent"]["intentName"]
     else:
@@ -123,21 +128,25 @@ def compute_utterance_metrics(parsing, utterance, utterance_intent,
         [(parsing_intent_name, s["slotName"]) for s in parsed_slots] +
         [(utterance_intent, u[SLOT_NAME]) for u in utterance_slots])
 
-    metrics = {
-        intent: {
-            "intent": deepcopy(INITIAL_METRICS),
-            "slots": dict(),
-        } for intent in intent_names
-    }
+    metrics = dict()
+    for intent in intent_names:
+        metrics[intent] = {"intent": deepcopy(INITIAL_METRICS)}
+        if include_slot_metrics:
+            metrics[intent]["slots"] = dict()
 
-    for (intent_name, slot_name) in slot_names:
-        metrics[intent_name]["slots"][slot_name] = deepcopy(INITIAL_METRICS)
+    if include_slot_metrics:
+        for (intent_name, slot_name) in slot_names:
+            metrics[intent_name]["slots"][slot_name] = deepcopy(
+                INITIAL_METRICS)
 
     if parsing_intent_name == utterance_intent:
         metrics[parsing_intent_name]["intent"][TRUE_POSITIVE] += 1
     else:
         metrics[parsing_intent_name]["intent"][FALSE_POSITIVE] += 1
         metrics[utterance_intent]["intent"][FALSE_NEGATIVE] += 1
+        return metrics
+
+    if not include_slot_metrics:
         return metrics
 
     # Check if expected slots have been parsed
@@ -160,7 +169,7 @@ def compute_utterance_metrics(parsing, utterance, utterance_intent,
     return metrics
 
 
-def aggregate_metrics(lhs_metrics, rhs_metrics):
+def aggregate_metrics(lhs_metrics, rhs_metrics, include_slot_metrics):
     acc_metrics = deepcopy(lhs_metrics)
     for (intent, intent_metrics) in rhs_metrics.items():
         if intent not in acc_metrics:
@@ -168,6 +177,8 @@ def aggregate_metrics(lhs_metrics, rhs_metrics):
         else:
             acc_metrics[intent]["intent"] = add_count_metrics(
                 acc_metrics[intent]["intent"], intent_metrics["intent"])
+            if not include_slot_metrics:
+                continue
             acc_slot_metrics = acc_metrics[intent]["slots"]
             for (slot, slot_metrics) in intent_metrics["slots"].items():
                 if slot not in acc_slot_metrics:
@@ -214,13 +225,15 @@ def _compute_precision_recall_f1(count_metrics):
     }
 
 
-def contains_errors(utterance_metrics):
+def contains_errors(utterance_metrics, check_slots):
     for metrics in utterance_metrics.values():
         intent_metrics = metrics["intent"]
         if intent_metrics.get(FALSE_POSITIVE, 0) > 0:
             return True
         if intent_metrics.get(FALSE_NEGATIVE, 0) > 0:
             return True
+        if not check_slots:
+            continue
         for slot_metrics in metrics["slots"].values():
             if slot_metrics.get(FALSE_POSITIVE, 0) > 0:
                 return True
@@ -229,7 +242,7 @@ def contains_errors(utterance_metrics):
     return False
 
 
-def format_expected_output(intent_name, utterance):
+def format_expected_output(intent_name, utterance, include_slots):
     char_index = 0
     ranges = []
     for chunk in utterance[DATA]:
@@ -237,22 +250,25 @@ def format_expected_output(intent_name, utterance):
         ranges.append({"start": char_index, "end": range_end})
         char_index = range_end
 
-    return {
+    expected_output = {
         "input": "".join(chunk[TEXT] for chunk in utterance[DATA]),
         "intent": {
             "intentName": intent_name,
             "probability": 1.0
-        },
-        "slots": [
+        }
+    }
+    if include_slots:
+        expected_output["slots"] = [
             {
                 "rawValue": chunk[TEXT],
                 "entity": chunk[ENTITY],
                 "slotName": chunk[SLOT_NAME],
                 "range": ranges[chunk_index]
-            } for chunk_index, chunk in enumerate(utterance[DATA])
+            }
+            for chunk_index, chunk in enumerate(utterance[DATA])
             if ENTITY in chunk
         ]
-    }
+    return expected_output
 
 
 def is_builtin_entity(entity_name):
