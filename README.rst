@@ -33,15 +33,17 @@ Snips NLU metrics API consists in the following functions:
 * ``compute_train_test_metrics`` to compute `train/test`_ metrics
 * ``compute_cross_val_metrics`` to compute `cross-validation`_ metrics
 
-The metrics output provides detailed information about
-`precision, recall and f1 scores`_ of intent classification and entity
-extraction, as well as a parsing
-errors report.
+The metrics output (json) provides detailed information about:
+
+* `precision, recall and f1 scores`_ of intent classification
+* precision, recall and f1 scores of entity extraction
+* parsing errors
+* `confusion matrix`_
 
 Examples
 --------
 
-The Snips NLU metrics library can be used either with Snips NLU or with a
+The Snips NLU metrics library can be used either with `Snips NLU`_ or with a
 custom intent parsing pipeline.
 
 ----------------
@@ -126,3 +128,4 @@ This library is provided by `Snips <https://www.snips.ai>`_ as Open Source softw
 .. _train/test: https://en.wikipedia.org/wiki/Training,_test,_and_validation_sets
 .. _Snips NLU: https://github.com/snipsco/snips-nlu
 .. _precision, recall and f1 scores: https://en.wikipedia.org/wiki/Precision_and_recall
+.. _confusion matrix: https://en.wikipedia.org/wiki/Confusion_matrix
