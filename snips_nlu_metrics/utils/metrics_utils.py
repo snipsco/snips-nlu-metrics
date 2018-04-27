@@ -230,9 +230,10 @@ def compute_precision_recall_f1(metrics):
         prec_rec_metrics = _compute_precision_recall_f1(
             intent_metrics["intent"])
         intent_metrics["intent"].update(prec_rec_metrics)
-        for slot_metrics in intent_metrics["slots"].values():
-            prec_rec_metrics = _compute_precision_recall_f1(slot_metrics)
-            slot_metrics.update(prec_rec_metrics)
+        if "slots" in intent_metrics:
+            for slot_metrics in intent_metrics["slots"].values():
+                prec_rec_metrics = _compute_precision_recall_f1(slot_metrics)
+                slot_metrics.update(prec_rec_metrics)
     return metrics
 
 
