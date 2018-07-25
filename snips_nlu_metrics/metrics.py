@@ -1,65 +1,17 @@
-from __future__ import division
-from __future__ import print_function
-from __future__ import unicode_literals
+from __future__ import division, print_function, unicode_literals
 
 import io
 import json
 
 from past.builtins import basestring
 
-from snips_nlu_metrics.engine import build_nlu_engine_class
 from snips_nlu_metrics.utils.constants import (
-    INTENTS, UTTERANCES, INTENT_UTTERANCES, PARSING_ERRORS, METRICS,
-    CONFUSION_MATRIX)
+    CONFUSION_MATRIX, INTENTS, INTENT_UTTERANCES, METRICS, PARSING_ERRORS,
+    UTTERANCES)
 from snips_nlu_metrics.utils.exception import NotEnoughDataError
 from snips_nlu_metrics.utils.metrics_utils import (
-    create_shuffle_stratified_splits, compute_engine_metrics,
-    aggregate_metrics, compute_precision_recall_f1, aggregate_matrices)
-
-
-def compute_cross_val_nlu_metrics(dataset, training_engine_class,
-                                  inference_engine_class, nb_folds=5,
-                                  train_size_ratio=1.0,
-                                  drop_entities=False,
-                                  include_slot_metrics=True,
-                                  slot_matching_lambda=None,
-                                  progression_handler=None):
-    """Compute pure NLU metrics on the dataset using cross validation
-
-    Args:
-        dataset (dict or str): Dataset or path to dataset
-        training_engine_class: Python class to use for training
-        inference_engine_class: Python class to use for inference
-        nb_folds (int, optional): Number of folds to use for cross validation
-        train_size_ratio (float, optional): Ratio of intent utterances to use
-            for training
-        drop_entities (bool, false): Specify whether not all entity values
-            should be removed from training data
-        include_slot_metrics (bool, true): If false, the slots metrics and the
-            slots parsing errors will not be reported.
-        slot_matching_lambda (lambda, optional):
-            lambda expected_slot, actual_slot -> bool,
-            if defined, this function will be use to match slots when computing
-            metrics, otherwise exact match will be used.
-            `expected_slot` corresponds to the slot as defined in the dataset,
-            and `actual_slot` corresponds to the slot as returned by the NLU
-        progression_handler (lambda, optional): handler called at each
-            progression (%) step
-
-    Returns
-        dict: Metrics results containing the following data
-
-            - "metrics": the computed metrics
-            - "parsing_errors": the list of parsing errors
-
-    """
-    engine_class = build_nlu_engine_class(training_engine_class,
-                                          inference_engine_class)
-    return compute_cross_val_metrics(dataset, engine_class, nb_folds,
-                                     train_size_ratio, drop_entities,
-                                     include_slot_metrics,
-                                     slot_matching_lambda,
-                                     progression_handler)
+    aggregate_matrices, aggregate_metrics, compute_engine_metrics,
+    compute_precision_recall_f1, create_shuffle_stratified_splits)
 
 
 def compute_cross_val_metrics(dataset, engine_class, nb_folds=5,
@@ -142,42 +94,6 @@ def compute_cross_val_metrics(dataset, engine_class, nb_folds=5,
         PARSING_ERRORS: global_errors,
         CONFUSION_MATRIX: global_confusion_matrix
     }
-
-
-def compute_train_test_nlu_metrics(train_dataset, test_dataset,
-                                   training_engine_class,
-                                   inference_engine_class,
-                                   include_slot_metrics=True,
-                                   slot_matching_lambda=None):
-    """Compute pure NLU metrics on `test_dataset` after having trained on
-    `train_dataset`
-
-    Args
-        train_dataset (dict or str): Dataset or path to dataset used for
-            training
-        test_dataset (dict or str): Dataset or path to dataset used for testing
-        training_engine_class: Python class to use for training
-        inference_engine_class: Python class to use for inference
-        include_slot_metrics (bool, true): If false, the slots metrics and the
-            slots parsing errors will not be reported.
-        slot_matching_lambda (lambda, optional):
-            lambda expected_slot, actual_slot -> bool,
-            if defined, this function will be use to match slots when computing
-            metrics, otherwise exact match will be used.
-            `expected_slot` corresponds to the slot as defined in the dataset,
-            and `actual_slot` corresponds to the slot as returned by the NLU
-
-    Returns
-        dict: Metrics results containing the following data
-
-            - "metrics": the computed metrics
-            - "parsing_errors": the list of parsing errors
-    """
-    engine_class = build_nlu_engine_class(training_engine_class,
-                                          inference_engine_class)
-    return compute_train_test_metrics(train_dataset, test_dataset,
-                                      engine_class, include_slot_metrics,
-                                      slot_matching_lambda)
 
 
 def compute_train_test_metrics(train_dataset, test_dataset, engine_class,

@@ -22,7 +22,7 @@ Install
 
 .. code-block:: console
 
-    pip install snips_nlu_metrics
+    $ pip install snips_nlu_metrics
 
 
 NLU Metrics API
@@ -40,24 +40,64 @@ The metrics output (json) provides detailed information about:
 * parsing errors
 * `confusion matrix`_
 
+Data
+----
+
+Some sample datasets, that can be used to compute metrics, are available
+`here <samples/>`_. Alternatively, you can create your own dataset either by
+using ``snips-nlu``'s `dataset generation tool`_ or by going on the
+`Snips console`_.
+
 Examples
 --------
 
-The Snips NLU metrics library can be used either with `Snips NLU`_ or with a
-custom intent parsing pipeline.
+The Snips NLU metrics library can be used with any NLU pipeline which satisfies
+the ``Engine`` API:
+
+.. code-block:: python
+
+    from builtins import object
+
+    class Engine(object):
+        def fit(self, dataset):
+            # Perform training ...
+            return self
+
+        def parse(self, text):
+            # extract intent and slots ...
+            return {
+                "input": text,
+                "intent": {
+                    "intentName": intent_name,
+                    "probability": probability
+                },
+                "slots": slots
+            }
+
 
 ----------------
 Snips NLU Engine
 ----------------
 
-Here is how you can use the metrics API to compute metrics for the Snips NLU
-pipeline:
+This library can be used to benchmark NLU solutions such as `Snips NLU`_. To
+install the ``snips-nlu`` python library, and fetch the language resources for
+english, run the following commands:
+
+.. code-block:: bash
+
+    $ pip install snips-nlu
+    $ snips-nlu download en
+
+
+Then, you can compute metrics for the ``snips-nlu`` pipeline using the metrics
+API as follows:
 
 .. code-block:: python
 
-    from snips_nlu import SnipsNLUEngine
+    from snips_nlu import load_resources, SnipsNLUEngine
     from snips_nlu_metrics import compute_train_test_metrics, compute_cross_val_metrics
 
+    load_resources("en")
 
     tt_metrics = compute_train_test_metrics(train_dataset="samples/train_dataset.json",
                                             test_dataset="samples/test_dataset.json",
@@ -66,16 +106,6 @@ pipeline:
     cv_metrics = compute_cross_val_metrics(dataset="samples/cross_val_dataset.json",
                                            engine_class=SnipsNLUEngine,
                                            nb_folds=5)
-
-Some `sample code and datasets <samples/>`_ are also available, you can have an
-overview of the metrics output by running:
-
-.. code-block:: bash
-
-    git clone https://github.com/snipsco/snips-nlu-metrics.git
-    cd snips-nlu-metrics
-    pip install -e ".[samples]"
-    python samples/sample.py train-test
 
 -----------------
 Custom NLU Engine
@@ -129,3 +159,5 @@ This library is provided by `Snips <https://www.snips.ai>`_ as Open Source softw
 .. _Snips NLU: https://github.com/snipsco/snips-nlu
 .. _precision, recall and f1 scores: https://en.wikipedia.org/wiki/Precision_and_recall
 .. _confusion matrix: https://en.wikipedia.org/wiki/Confusion_matrix
+.. _dataset generation tool: http://snips-nlu.readthedocs.io/en/latest/tutorial.html#snips-dataset-format
+.. _Snips console: https://console.snips.ai
