@@ -19,14 +19,14 @@ with io.open(README, 'rt', encoding='utf8') as f:
 
 install_requires = [
     "future",
-    "numpy==1.14.0",
-    "scipy==1.0.0",
-    "scikit-learn==0.19.1",
+    "numpy>=1.7,<2.0",
+    "scipy>=1.0,<2.0",
+    "scikit-learn>=0.19,<0.20",
 ]
 
 extras_require = {
     "test": [
-        "mock==2.0.0",
+        "mock>=2.0,<3.0",
     ]
 }
 
