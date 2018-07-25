@@ -114,8 +114,12 @@ def compute_engine_metrics(engine, test_utterances, intent_list,
 
         predicted_slots = [] if parsing["slots"] is None else parsing["slots"]
 
-        i = intents_idx[actual_intent]
-        j = intents_idx[predicted_intent]
+        i = intents_idx.get(actual_intent)
+        j = intents_idx.get(predicted_intent)
+
+        if i is None or j is None:
+            continue
+            
         confusion_matrix["matrix"][i][j] += 1
 
         utterance_metrics = compute_utterance_metrics(
