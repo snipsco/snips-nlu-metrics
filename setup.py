@@ -27,9 +27,6 @@ install_requires = [
 extras_require = {
     "test": [
         "mock==2.0.0",
-    ],
-    "samples": [
-        "snips-nlu==0.12.1"
     ]
 }
 
