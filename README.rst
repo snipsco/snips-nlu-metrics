@@ -22,7 +22,7 @@ Install
 
 .. code-block:: console
 
-    pip install snips_nlu_metrics
+    $ pip install snips_nlu_metrics
 
 
 NLU Metrics API
@@ -43,7 +43,7 @@ The metrics output (json) provides detailed information about:
 Data
 ----
 
-Some sample datasets that can be used to compute metrics can be found
+Some sample datasets, that can be used to compute metrics, are available
 `here <samples/>`_. Alternatively, you can create your own dataset either by
 using ``snips-nlu``'s `dataset generation tool`_ or by going on the
 `Snips console`_.
@@ -52,7 +52,7 @@ Examples
 --------
 
 The Snips NLU metrics library can be used with any NLU pipeline which satisfies
-the ``Engine`` api:
+the ``Engine`` API:
 
 .. code-block:: python
 
@@ -85,8 +85,8 @@ english, run the following commands:
 
 .. code-block:: bash
 
-    pip install snips-nlu
-    snips-nlu download en
+    $ pip install snips-nlu
+    $ snips-nlu download en
 
 
 Then, you can compute metrics for the ``snips-nlu`` pipeline using the metrics
