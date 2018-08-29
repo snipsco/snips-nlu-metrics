@@ -42,6 +42,8 @@ def compute_cross_val_metrics(dataset, engine_class, nb_folds=5,
             and `actual_slot` corresponds to the slot as returned by the NLU
         progression_handler (lambda, optional): handler called at each
             progression (%) step
+        num_workers: number of workers to use. Each worker is assigned a
+            certain number of splits
 
     Returns:
         dict: Metrics results containing the following data
@@ -71,11 +73,12 @@ def compute_cross_val_metrics(dataset, engine_class, nb_folds=5,
     global_errors = []
     total_splits = len(splits)
 
-    def run_split(engine_class, train_dataset, test_utterances):
+    def run_split(engine_class, split):
         """
             Fit and run engine on a split specified by train_dataset and
             test_utterances
         """
+        train_dataset, test_utterances = split
         engine = engine_class()
         engine.fit(train_dataset)
         return compute_engine_metrics(
@@ -104,10 +107,9 @@ def compute_cross_val_metrics(dataset, engine_class, nb_folds=5,
         effective_num_workers = min(num_workers, len(splits))
         pool = Pool(effective_num_workers)
         results = pool.map(
-            lambda (train_dataset, test_utterances):
+            lambda split:
             run_split(engine_class,
-                      train_dataset,
-                      test_utterances),
+                      split),
             splits)
         for split_metrics, errors, confusion_matrix in results:
             global_metrics, global_confusion_matrix, global_errors = \
@@ -117,11 +119,10 @@ def compute_cross_val_metrics(dataset, engine_class, nb_folds=5,
                                confusion_matrix,
                                global_errors, errors)
     else:
-        for split_index, (train_dataset, test_utterances) in enumerate(splits):
+        for split_index, split in enumerate(splits):
             split_metrics, errors, confusion_matrix = run_split(
                 engine_class,
-                train_dataset,
-                test_utterances)
+                split)
             global_metrics, global_confusion_matrix, global_errors = \
                 update_metrics(global_metrics,
                                split_metrics,
