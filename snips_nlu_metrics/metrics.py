@@ -2,6 +2,7 @@ from __future__ import division, print_function, unicode_literals
 
 import io
 import json
+import itertools
 
 from past.builtins import basestring
 from pathos.multiprocessing import Pool
@@ -13,6 +14,43 @@ from snips_nlu_metrics.utils.exception import NotEnoughDataError
 from snips_nlu_metrics.utils.metrics_utils import (
     aggregate_matrices, aggregate_metrics, compute_engine_metrics,
     compute_precision_recall_f1, create_shuffle_stratified_splits)
+
+
+def _run_split(engine_class,
+               split,
+               intent_list,
+               include_slot_metrics,
+               slot_matching_lambda):
+    """
+        Fit and run engine on a split specified by train_dataset and
+        test_utterances
+    """
+    train_dataset, test_utterances = split
+    engine = engine_class()
+    engine.fit(train_dataset)
+    return compute_engine_metrics(
+        engine, test_utterances, intent_list, include_slot_metrics,
+        slot_matching_lambda)
+
+
+def _update_metrics(global_metrics,
+                    split_metrics,
+                    global_confusion_matrix,
+                    confusion_matrix,
+                    global_errors,
+                    errors,
+                    include_slot_metrics):
+    """
+        Update global metrics with results on split
+    """
+    global_metrics = aggregate_metrics(global_metrics,
+                                       split_metrics,
+                                       include_slot_metrics)
+    global_confusion_matrix = \
+        aggregate_matrices(global_confusion_matrix,
+                           confusion_matrix)
+    global_errors += errors
+    return global_metrics, global_confusion_matrix, global_errors
 
 
 def compute_cross_val_metrics(dataset, engine_class, nb_folds=5,
@@ -73,65 +111,35 @@ def compute_cross_val_metrics(dataset, engine_class, nb_folds=5,
     global_errors = []
     total_splits = len(splits)
 
-    def run_split(engine_class, split):
-        """
-            Fit and run engine on a split specified by train_dataset and
-            test_utterances
-        """
-        train_dataset, test_utterances = split
-        engine = engine_class()
-        engine.fit(train_dataset)
-        return compute_engine_metrics(
-            engine, test_utterances, intent_list, include_slot_metrics,
-            slot_matching_lambda)
-
-    def update_metrics(global_metrics,
-                       split_metrics,
-                       global_confusion_matrix,
-                       confusion_matrix,
-                       global_errors,
-                       errors):
-        """
-            Update global metrics with results on split
-        """
-        global_metrics = aggregate_metrics(global_metrics,
-                                           split_metrics,
-                                           include_slot_metrics)
-        global_confusion_matrix = \
-            aggregate_matrices(global_confusion_matrix,
-                               confusion_matrix)
-        global_errors += errors
-        return global_metrics, global_confusion_matrix, global_errors
-
     if num_workers > 1:
         effective_num_workers = min(num_workers, len(splits))
         pool = Pool(effective_num_workers)
-        results = pool.map(
-            lambda split:
-            run_split(engine_class,
-                      split),
-            splits)
-        for split_metrics, errors, confusion_matrix in results:
-            global_metrics, global_confusion_matrix, global_errors = \
-                update_metrics(global_metrics,
-                               split_metrics,
-                               global_confusion_matrix,
-                               confusion_matrix,
-                               global_errors, errors)
+        runner = pool.imap_unordered
     else:
-        for split_index, split in enumerate(splits):
-            split_metrics, errors, confusion_matrix = run_split(
-                engine_class,
-                split)
-            global_metrics, global_confusion_matrix, global_errors = \
-                update_metrics(global_metrics,
-                               split_metrics,
-                               global_confusion_matrix,
-                               confusion_matrix,
-                               global_errors, errors)
-            if progression_handler is not None:
-                progression_handler(
-                    float(split_index + 1) / float(total_splits))
+        runner = itertools.imap
+
+    results = runner(
+        lambda split:
+        _run_split(engine_class,
+                   split,
+                   intent_list,
+                   include_slot_metrics,
+                   slot_matching_lambda),
+        splits)
+
+    for split_index, (split_metrics, errors, confusion_matrix) in \
+            enumerate(results):
+        global_metrics, global_confusion_matrix, global_errors = \
+            _update_metrics(global_metrics,
+                            split_metrics,
+                            global_confusion_matrix,
+                            confusion_matrix,
+                            global_errors,
+                            errors,
+                            include_slot_metrics)
+        if progression_handler is not None:
+            progression_handler(
+                float(split_index + 1) / float(total_splits))
 
     global_metrics = compute_precision_recall_f1(global_metrics)
 
