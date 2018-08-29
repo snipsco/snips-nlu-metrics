@@ -2,8 +2,8 @@ from __future__ import division, print_function, unicode_literals
 
 import io
 import json
-import itertools
 
+from builtins import map
 from past.builtins import basestring
 from pathos.multiprocessing import Pool
 
@@ -118,7 +118,7 @@ def compute_cross_val_metrics(dataset, engine_class, nb_folds=5,
         pool = Pool(effective_num_workers)
         runner = pool.imap_unordered
     else:
-        runner = itertools.imap
+        runner = map
 
     results = runner(
         lambda split:
