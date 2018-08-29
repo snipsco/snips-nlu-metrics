@@ -66,22 +66,24 @@ def compute_cross_val_metrics(dataset, engine_class, nb_folds=5,
         engine_class: Python class to use for training and inference, this
             class must inherit from `Engine`
         nb_folds (int, optional): Number of folds to use for cross validation
-        train_size_ratio: float, ratio of intent utterances to use for
-            training (default=5)
-        drop_entities (bool, false): Specify whether not all entity values
-            should be removed from training data
-        include_slot_metrics (bool, true): If false, the slots metrics and the
-            slots parsing errors will not be reported.
+            (default=5)
+        train_size_ratio (float, optional): ratio of intent utterances to use
+            for training (default=1.0)
+        drop_entities (bool, optional): Specify whether or not all entity
+            values should be removed from training data (default=False)
+        include_slot_metrics (bool, optional): If false, the slots metrics and
+            the slots parsing errors will not be reported (default=True)
         slot_matching_lambda (lambda, optional):
             lambda expected_slot, actual_slot -> bool,
             if defined, this function will be use to match slots when computing
             metrics, otherwise exact match will be used.
             `expected_slot` corresponds to the slot as defined in the dataset,
             and `actual_slot` corresponds to the slot as returned by the NLU
+            default(None)
         progression_handler (lambda, optional): handler called at each
-            progression (%) step
-        num_workers: number of workers to use. Each worker is assigned a
-            certain number of splits
+            progression (%) step (default=None)
+        num_workers (int, optional): number of workers to use. Each worker
+            is assigned a certain number of splits (default=1)
 
     Returns:
         dict: Metrics results containing the following data
