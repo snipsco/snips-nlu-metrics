@@ -58,7 +58,8 @@ def compute_cross_val_metrics(dataset, engine_class, nb_folds=5,
                               include_slot_metrics=True,
                               slot_matching_lambda=None,
                               progression_handler=None,
-                              num_workers=1):
+                              num_workers=1,
+                              seed=None):
     """Compute end-to-end metrics on the dataset using cross validation
 
     Args:
@@ -84,6 +85,7 @@ def compute_cross_val_metrics(dataset, engine_class, nb_folds=5,
             progression (%) step (default=None)
         num_workers (int, optional): number of workers to use. Each worker
             is assigned a certain number of splits (default=1)
+        seed (int, optional): seed for the split creation
 
     Returns:
         dict: Metrics results containing the following data
@@ -99,7 +101,7 @@ def compute_cross_val_metrics(dataset, engine_class, nb_folds=5,
 
     try:
         splits = create_shuffle_stratified_splits(
-            dataset, nb_folds, train_size_ratio, drop_entities)
+            dataset, nb_folds, train_size_ratio, drop_entities, seed)
     except NotEnoughDataError as e:
         print("Skipping metrics computation because of: %s" % e.message)
         return {
