@@ -9,7 +9,8 @@ from sklearn.utils import check_random_state
 
 from snips_nlu_metrics.utils.constants import (
     DATA, ENTITIES, ENTITY, FALSE_NEGATIVE, FALSE_POSITIVE, INTENTS,
-    NONE_INTENT_NAME, SLOT_NAME, TEXT, TRUE_POSITIVE, UTTERANCES)
+    NONE_INTENT_NAME, SLOT_NAME, TEXT, TRUE_POSITIVE, UTTERANCES,
+    EXACT_PARSINGS)
 from snips_nlu_metrics.utils.dataset_utils import (
     get_utterances_subset, input_string_from_chunks,
     update_entities_with_utterances)
@@ -135,6 +136,8 @@ def compute_engine_metrics(engine, test_utterances, intent_list,
         utterance_metrics = compute_utterance_metrics(
             predicted_intent, predicted_slots, actual_intent, actual_slots,
             include_slot_metrics, slot_matching_lambda)
+        for intent in utterance_metrics:
+            utterance_metrics[intent][EXACT_PARSINGS] = 0
         if contains_errors(utterance_metrics, include_slot_metrics):
             if not include_slot_metrics:
                 parsing.pop("slots")
@@ -143,6 +146,8 @@ def compute_engine_metrics(engine, test_utterances, intent_list,
                 "expected_output": format_expected_output(
                     actual_intent, utterance, include_slot_metrics)
             })
+        else:
+            utterance_metrics[actual_intent][EXACT_PARSINGS] = 1
         metrics = aggregate_metrics(metrics, utterance_metrics,
                                     include_slot_metrics)
     return metrics, errors, confusion_matrix
@@ -206,6 +211,8 @@ def aggregate_metrics(lhs_metrics, rhs_metrics, include_slot_metrics):
         else:
             acc_metrics[intent]["intent"] = add_count_metrics(
                 acc_metrics[intent]["intent"], intent_metrics["intent"])
+            acc_metrics[intent][EXACT_PARSINGS] += intent_metrics[
+                EXACT_PARSINGS]
             if not include_slot_metrics:
                 continue
             acc_slot_metrics = acc_metrics[intent]["slots"]
@@ -235,7 +242,7 @@ def add_count_metrics(lhs, rhs):
     return {
         TRUE_POSITIVE: lhs[TRUE_POSITIVE] + rhs[TRUE_POSITIVE],
         FALSE_POSITIVE: lhs[FALSE_POSITIVE] + rhs[FALSE_POSITIVE],
-        FALSE_NEGATIVE: lhs[FALSE_NEGATIVE] + rhs[FALSE_NEGATIVE],
+        FALSE_NEGATIVE: lhs[FALSE_NEGATIVE] + rhs[FALSE_NEGATIVE]
     }
 
 
