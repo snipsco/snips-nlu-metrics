@@ -33,8 +33,9 @@ class TestMetrics(unittest.TestCase):
                     "false_negative": 0,
                     "precision": 0.0,
                     "recall": 0.0,
-                    "f1": 0.0
+                    "f1": 0.0,
                 },
+                "exact_parsings": 0,
                 "slots": {},
                 "intent_utterances": 0
             },
@@ -45,8 +46,9 @@ class TestMetrics(unittest.TestCase):
                     "false_negative": 7,
                     "precision": 0.0,
                     "recall": 0.0,
-                    "f1": 0.0
+                    "f1": 0.0,
                 },
+                "exact_parsings": 0,
                 "slots": {
                     "number_of_cups": {
                         "true_positive": 0,
@@ -66,8 +68,9 @@ class TestMetrics(unittest.TestCase):
                     "false_negative": 4,
                     "precision": 0.0,
                     "recall": 0.0,
-                    "f1": 0.0
+                    "f1": 0.0,
                 },
+                "exact_parsings": 0,
                 "slots": {
                     "number_of_cups": {
                         "true_positive": 0,
@@ -75,7 +78,7 @@ class TestMetrics(unittest.TestCase):
                         "false_negative": 0,
                         "precision": 0.0,
                         "recall": 0.0,
-                        "f1": 0.0
+                        "f1": 0.0,
                     },
                     "beverage_temperature": {
                         "true_positive": 0,
@@ -134,7 +137,8 @@ class TestMetrics(unittest.TestCase):
                     "recall": 0.0,
                     "f1": 0.0
                 },
-                "intent_utterances": 0
+                "intent_utterances": 0,
+                "exact_parsings": 0
             },
             "MakeCoffee": {
                 "intent": {
@@ -145,7 +149,8 @@ class TestMetrics(unittest.TestCase):
                     "recall": 0.0,
                     "f1": 0.0
                 },
-                "intent_utterances": 7
+                "intent_utterances": 7,
+                "exact_parsings": 0,
             },
             "MakeTea": {
                 "intent": {
@@ -156,7 +161,8 @@ class TestMetrics(unittest.TestCase):
                     "recall": 0.0,
                     "f1": 0.0
                 },
-                "intent_utterances": 4
+                "intent_utterances": 4,
+                "exact_parsings": 0,
             }
         }
 
@@ -215,7 +221,8 @@ class TestMetrics(unittest.TestCase):
                         "f1": 0.0
                     }
                 },
-                "intent_utterances": 7
+                "intent_utterances": 7,
+                "exact_parsings": 0,
             },
             "null": {
                 "intent": {
@@ -226,7 +233,8 @@ class TestMetrics(unittest.TestCase):
                     "recall": 0.0,
                     "f1": 0.0},
                 "slots": {},
-                "intent_utterances": 0
+                "intent_utterances": 0,
+                "exact_parsings": 0,
             }, "MakeTea": {
                 "intent": {
                     "true_positive": 0,
@@ -254,7 +262,8 @@ class TestMetrics(unittest.TestCase):
                         "f1": 0.0
                     }
                 },
-                "intent_utterances": 4
+                "intent_utterances": 4,
+                "exact_parsings": 0,
             }
         }
 
@@ -285,7 +294,8 @@ class TestMetrics(unittest.TestCase):
                     "recall": 0.0,
                     "f1": 0.0
                 },
-                "intent_utterances": 7
+                "intent_utterances": 7,
+                "exact_parsings": 0,
             },
             "null": {
                 "intent": {
@@ -295,7 +305,8 @@ class TestMetrics(unittest.TestCase):
                     "precision": 0.0,
                     "recall": 0.0,
                     "f1": 0.0},
-                "intent_utterances": 0
+                "intent_utterances": 0,
+                "exact_parsings": 0,
             }, "MakeTea": {
                 "intent": {
                     "true_positive": 0,
@@ -305,7 +316,8 @@ class TestMetrics(unittest.TestCase):
                     "recall": 0.0,
                     "f1": 0.0
                 },
-                "intent_utterances": 4
+                "intent_utterances": 4,
+                "exact_parsings": 0,
             }
         }
 
