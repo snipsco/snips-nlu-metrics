@@ -1,20 +1,19 @@
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import unicode_literals
+from __future__ import absolute_import, division, unicode_literals
 
 from copy import deepcopy
 
 import numpy as np
-from future.utils import iteritems
+from future.utils import iteritems, itervalues
 from sklearn.model_selection import StratifiedKFold
 from sklearn.utils import check_random_state
 
-from snips_nlu_metrics.utils.constants import (
-    INTENTS, UTTERANCES, DATA, SLOT_NAME, TEXT, FALSE_POSITIVE, FALSE_NEGATIVE,
-    ENTITY, TRUE_POSITIVE, ENTITIES)
-from snips_nlu_metrics.utils.dataset_utils import (
-    input_string_from_chunks, get_utterances_subset,
-    update_entities_with_utterances)
+from snips_nlu_metrics.utils.constants import (DATA, ENTITIES, ENTITY,
+                                               FALSE_NEGATIVE, FALSE_POSITIVE,
+                                               INTENTS, SLOT_NAME, TEXT,
+                                               TRUE_POSITIVE, UTTERANCES)
+from snips_nlu_metrics.utils.dataset_utils import (get_utterances_subset,
+                                                   input_string_from_chunks,
+                                                   update_entities_with_utterances)
 from snips_nlu_metrics.utils.exception import NotEnoughDataError
 
 INITIAL_METRICS = {
@@ -33,8 +32,8 @@ def create_shuffle_stratified_splits(dataset, n_splits, train_size_ratio=1.0,
                          % train_size_ratio)
 
     nb_utterances = {intent: len(data[UTTERANCES])
-                     for intent, data in dataset[INTENTS].items()}
-    total_utterances = sum(nb_utterances.values())
+                     for intent, data in iteritems(dataset[INTENTS])}
+    total_utterances = sum(itervalues(nb_utterances))
     if total_utterances < n_splits:
         raise NotEnoughDataError("Number of utterances is too low (%s)"
                                  % total_utterances)
@@ -47,7 +46,7 @@ def create_shuffle_stratified_splits(dataset, n_splits, train_size_ratio=1.0,
 
     utterances = np.array([
         (intent_name, utterance)
-        for intent_name, intent_data in dataset[INTENTS].items()
+        for intent_name, intent_data in iteritems(dataset[INTENTS])
         for utterance in intent_data[UTTERANCES]
     ])
     intents = np.array([u[0] for u in utterances])
@@ -76,6 +75,45 @@ def create_shuffle_stratified_splits(dataset, n_splits, train_size_ratio=1.0,
     except ValueError:
         not_enough_data(n_splits, train_size_ratio)
     return splits
+
+
+def train_test_split(dataset, train_size_ratio=1.0, drop_entities=False,
+                     seed=None):
+    if train_size_ratio > 1.0 or train_size_ratio < 0:
+        raise ValueError(
+            "Invalid value for train size ratio: %s" % train_size_ratio)
+
+    if drop_entities:
+        dataset = deepcopy(dataset)
+        for entity, data in iteritems(dataset[ENTITIES]):
+            data[DATA] = []
+    else:
+        dataset = update_entities_with_utterances(dataset)
+
+    random_state = check_random_state(seed)
+
+    train_dataset = deepcopy(dataset)
+    train_dataset[INTENTS] = dict()
+
+    test_dataset = deepcopy(dataset)
+    test_dataset[INTENTS] = dict()
+
+    for intent_name, intent in sorted(iteritems(dataset[INTENTS])):
+        utterances = random_state.permutation(
+            dataset[INTENTS][intent_name][UTTERANCES]).tolist()
+        num_utterances = len(utterances)
+        if num_utterances < 2:
+            raise NotEnoughDataError(
+                "Number of utterances is too low (%s) for intent %s"
+                % (num_utterances, intent_name))
+        test_ix = min(
+            num_utterances - 1, int(num_utterances * train_size_ratio))
+        train_utterances = utterances[:test_ix]
+        test_utterances = utterances[test_ix:]
+        train_dataset[INTENTS][intent_name] = {UTTERANCES: train_utterances}
+        test_dataset[INTENTS][intent_name] = {UTTERANCES: test_utterances}
+
+    return train_dataset, test_dataset
 
 
 def not_enough_data(n_splits, train_size_ratio):
@@ -119,7 +157,7 @@ def compute_engine_metrics(engine, test_utterances, intent_list,
 
         if i is None or j is None:
             continue
-            
+
         confusion_matrix["matrix"][i][j] += 1
 
         utterance_metrics = compute_utterance_metrics(
@@ -190,7 +228,7 @@ def compute_utterance_metrics(predicted_intent, predicted_slots, actual_intent,
 
 def aggregate_metrics(lhs_metrics, rhs_metrics, include_slot_metrics):
     acc_metrics = deepcopy(lhs_metrics)
-    for (intent, intent_metrics) in rhs_metrics.items():
+    for (intent, intent_metrics) in iteritems(rhs_metrics):
         if intent not in acc_metrics:
             acc_metrics[intent] = deepcopy(intent_metrics)
         else:
@@ -199,7 +237,7 @@ def aggregate_metrics(lhs_metrics, rhs_metrics, include_slot_metrics):
             if not include_slot_metrics:
                 continue
             acc_slot_metrics = acc_metrics[intent]["slots"]
-            for (slot, slot_metrics) in intent_metrics["slots"].items():
+            for (slot, slot_metrics) in iteritems(intent_metrics["slots"]):
                 if slot not in acc_slot_metrics:
                     acc_slot_metrics[slot] = deepcopy(slot_metrics)
                 else:
@@ -230,12 +268,12 @@ def add_count_metrics(lhs, rhs):
 
 
 def compute_precision_recall_f1(metrics):
-    for intent_metrics in metrics.values():
+    for intent_metrics in itervalues(metrics):
         prec_rec_metrics = _compute_precision_recall_f1(
             intent_metrics["intent"])
         intent_metrics["intent"].update(prec_rec_metrics)
         if "slots" in intent_metrics:
-            for slot_metrics in intent_metrics["slots"].values():
+            for slot_metrics in itervalues(intent_metrics["slots"]):
                 prec_rec_metrics = _compute_precision_recall_f1(slot_metrics)
                 slot_metrics.update(prec_rec_metrics)
     return metrics
@@ -259,7 +297,7 @@ def _compute_precision_recall_f1(count_metrics):
 
 
 def contains_errors(utterance_metrics, check_slots):
-    for metrics in utterance_metrics.values():
+    for metrics in itervalues(utterance_metrics):
         intent_metrics = metrics["intent"]
         if intent_metrics.get(FALSE_POSITIVE, 0) > 0:
             return True
@@ -267,7 +305,7 @@ def contains_errors(utterance_metrics, check_slots):
             return True
         if not check_slots:
             continue
-        for slot_metrics in metrics["slots"].values():
+        for slot_metrics in itervalues(metrics["slots"]):
             if slot_metrics.get(FALSE_POSITIVE, 0) > 0:
                 return True
             if slot_metrics.get(FALSE_NEGATIVE, 0) > 0:

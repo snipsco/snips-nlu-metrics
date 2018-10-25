@@ -1,7 +1,7 @@
 import io
 import os
 
-from setuptools import setup, find_packages
+from setuptools import find_packages, setup
 
 packages = [p for p in find_packages() if "tests" not in p]
 
@@ -18,16 +18,21 @@ with io.open(README, 'rt', encoding='utf8') as f:
     readme = f.read()
 
 install_requires = [
+    "backports.tempfile==1.0; python_version < '3.4'",
     "future",
     "numpy>=1.7,<2.0",
     "scipy>=1.0,<2.0",
     "scikit-learn>=0.19,<0.20",
-    "pathos~=0.2"
+    "pathlib==1.0.1; python_version < '3.4'",
+    "pathos~=0.2",
+    "plac>=0.9.6,<1.0",
 ]
 
 extras_require = {
     "test": [
+
         "mock>=2.0,<3.0",
+        "pytest>=9.2<10.0"
     ]
 }
 
@@ -46,6 +51,11 @@ setup(name=PACKAGE_NAME,
           "Programming Language :: Python :: 3.5",
           "Programming Language :: Python :: 3.6",
       ],
+      entry_points={
+          "console_scripts": [
+              "snips-nlu-metrics=snips_nlu_metrics.__main__:main"
+          ]
+      },
       extras_require=extras_require,
       install_requires=install_requires,
       packages=packages,
