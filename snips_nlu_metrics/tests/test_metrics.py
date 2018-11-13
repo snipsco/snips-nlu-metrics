@@ -6,7 +6,8 @@ import unittest
 from snips_nlu_metrics.metrics import (compute_cross_val_metrics,
                                        compute_train_test_metrics)
 from snips_nlu_metrics.tests.mock_engine import MockEngine
-from snips_nlu_metrics.utils.constants import METRICS, PARSING_ERRORS
+from snips_nlu_metrics.utils.constants import METRICS, PARSING_ERRORS, \
+    CONFUSION_MATRIX, AVERAGE_METRICS
 
 
 class TestMetrics(unittest.TestCase):
@@ -91,6 +92,23 @@ class TestMetrics(unittest.TestCase):
 
         self.assertDictEqual(expected_metrics, res["metrics"])
 
+        # Testing parallel CV with various number of workers
+        try:
+            res = compute_cross_val_metrics(
+                dataset=dataset, engine_class=MockEngine, nb_folds=2,
+                num_workers=4)
+        except Exception as e:
+            self.fail(e.args[0])
+        self.assertDictEqual(expected_metrics, res["metrics"])
+
+        try:
+            res = compute_cross_val_metrics(
+                dataset=dataset, engine_class=MockEngine, nb_folds=2,
+                num_workers=2)
+        except Exception as e:
+            self.fail(e.args[0])
+        self.assertDictEqual(expected_metrics, res["metrics"])
+
     def test_compute_cross_val_metrics_without_slot_metrics(self):
         # Given
         dataset_path = os.path.join(os.path.dirname(os.path.abspath(__file__)),
@@ -155,6 +173,8 @@ class TestMetrics(unittest.TestCase):
 
         # Then
         expected_result = {
+            AVERAGE_METRICS: None,
+            CONFUSION_MATRIX: None,
             METRICS: None,
             PARSING_ERRORS: []
         }

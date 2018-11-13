@@ -1,6 +1,12 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+## [0.14.0] - 2018-11-13
+### Added
+- Possibility to use parallel workers
+- Seed parameter for reproducibility
+- Average metrics for intent classification and slot filling
+
 ## [0.13.0] - 2018-07-25
 ### Fixed
 - Crash while computing metrics when either actual or predicted intent is unknown
@@ -22,5 +28,6 @@ All notable changes to this project will be documented in this file.
 - Samples
 
 
+[0.14.0]: https://github.com/snipsco/snips-nlu-metrics/compare/0.13.0...0.14.0
 [0.13.0]: https://github.com/snipsco/snips-nlu-metrics/compare/0.12.0...0.13.0
 [0.12.0]: https://github.com/snipsco/snips-nlu-metrics/compare/0.11.1...0.12.0

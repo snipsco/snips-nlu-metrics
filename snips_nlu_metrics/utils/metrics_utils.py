@@ -1,19 +1,17 @@
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import unicode_literals
+from __future__ import absolute_import, division, unicode_literals
 
 from copy import deepcopy
 
 import numpy as np
-from future.utils import iteritems
+from future.utils import iteritems, itervalues
 from sklearn.model_selection import StratifiedKFold
 from sklearn.utils import check_random_state
 
 from snips_nlu_metrics.utils.constants import (
-    INTENTS, UTTERANCES, DATA, SLOT_NAME, TEXT, FALSE_POSITIVE, FALSE_NEGATIVE,
-    ENTITY, TRUE_POSITIVE, ENTITIES)
+    DATA, ENTITIES, ENTITY, FALSE_NEGATIVE, FALSE_POSITIVE, INTENTS,
+    NONE_INTENT_NAME, SLOT_NAME, TEXT, TRUE_POSITIVE, UTTERANCES)
 from snips_nlu_metrics.utils.dataset_utils import (
-    input_string_from_chunks, get_utterances_subset,
+    get_utterances_subset, input_string_from_chunks,
     update_entities_with_utterances)
 from snips_nlu_metrics.utils.exception import NotEnoughDataError
 
@@ -23,8 +21,6 @@ INITIAL_METRICS = {
     FALSE_NEGATIVE: 0
 }
 
-NONE_INTENT_NAME = "null"
-
 
 def create_shuffle_stratified_splits(dataset, n_splits, train_size_ratio=1.0,
                                      drop_entities=False, seed=None):
@@ -33,8 +29,8 @@ def create_shuffle_stratified_splits(dataset, n_splits, train_size_ratio=1.0,
                          % train_size_ratio)
 
     nb_utterances = {intent: len(data[UTTERANCES])
-                     for intent, data in dataset[INTENTS].items()}
-    total_utterances = sum(nb_utterances.values())
+                     for intent, data in iteritems(dataset[INTENTS])}
+    total_utterances = sum(itervalues(nb_utterances))
     if total_utterances < n_splits:
         raise NotEnoughDataError("Number of utterances is too low (%s)"
                                  % total_utterances)
@@ -47,7 +43,7 @@ def create_shuffle_stratified_splits(dataset, n_splits, train_size_ratio=1.0,
 
     utterances = np.array([
         (intent_name, utterance)
-        for intent_name, intent_data in dataset[INTENTS].items()
+        for intent_name, intent_data in iteritems(dataset[INTENTS])
         for utterance in intent_data[UTTERANCES]
     ])
     intents = np.array([u[0] for u in utterances])
@@ -85,6 +81,18 @@ def not_enough_data(n_splits, train_size_ratio):
                              % (n_splits, train_size_ratio))
 
 
+def compute_split_metrics(engine_class, split, intent_list,
+                          include_slot_metrics, slot_matching_lambda):
+    """Fit and run engine on a split specified by train_dataset and
+        test_utterances"""
+    train_dataset, test_utterances = split
+    engine = engine_class()
+    engine.fit(train_dataset)
+    return compute_engine_metrics(
+        engine, test_utterances, intent_list, include_slot_metrics,
+        slot_matching_lambda)
+
+
 def compute_engine_metrics(engine, test_utterances, intent_list,
                            include_slot_metrics, slot_matching_lambda=None):
     if slot_matching_lambda is None:
@@ -119,7 +127,7 @@ def compute_engine_metrics(engine, test_utterances, intent_list,
 
         if i is None or j is None:
             continue
-            
+
         confusion_matrix["matrix"][i][j] += 1
 
         utterance_metrics = compute_utterance_metrics(
@@ -190,7 +198,7 @@ def compute_utterance_metrics(predicted_intent, predicted_slots, actual_intent,
 
 def aggregate_metrics(lhs_metrics, rhs_metrics, include_slot_metrics):
     acc_metrics = deepcopy(lhs_metrics)
-    for (intent, intent_metrics) in rhs_metrics.items():
+    for (intent, intent_metrics) in iteritems(rhs_metrics):
         if intent not in acc_metrics:
             acc_metrics[intent] = deepcopy(intent_metrics)
         else:
@@ -199,7 +207,7 @@ def aggregate_metrics(lhs_metrics, rhs_metrics, include_slot_metrics):
             if not include_slot_metrics:
                 continue
             acc_slot_metrics = acc_metrics[intent]["slots"]
-            for (slot, slot_metrics) in intent_metrics["slots"].items():
+            for (slot, slot_metrics) in iteritems(intent_metrics["slots"]):
                 if slot not in acc_slot_metrics:
                     acc_slot_metrics[slot] = deepcopy(slot_metrics)
                 else:
@@ -229,13 +237,65 @@ def add_count_metrics(lhs, rhs):
     }
 
 
+def compute_average_metrics(metrics):
+    nb_intents = len(metrics) - 1  # Removing the "null" intent
+    if not nb_intents:
+        return None
+
+    average_intent_f1 = sum(
+        intent_metrics["intent"]["f1"]
+        for intent, intent_metrics in iteritems(metrics)
+        if intent and intent != NONE_INTENT_NAME) / nb_intents
+    average_intent_precision = sum(
+        intent_metrics["intent"]["precision"]
+        for intent, intent_metrics in iteritems(metrics)
+        if intent and intent != NONE_INTENT_NAME) / nb_intents
+    average_intent_recall = sum(
+        intent_metrics["intent"]["recall"]
+        for intent, intent_metrics in iteritems(metrics)
+        if intent and intent != NONE_INTENT_NAME) / nb_intents
+
+    average_metrics = {
+        "intent": {
+            "f1": average_intent_f1,
+            "precision": average_intent_precision,
+            "recall": average_intent_recall,
+        },
+    }
+
+    nb_slots = sum(1 for intent_metrics in itervalues(metrics)
+                   for _ in itervalues(intent_metrics.get("slots", dict())))
+    if nb_slots == 0:
+        return average_metrics
+
+    average_slot_f1 = sum(
+        slot_metrics["f1"]
+        for intent_metrics in itervalues(metrics)
+        for slot_metrics in itervalues(intent_metrics["slots"])) / nb_slots
+    average_slot_precision = sum(
+        slot_metrics["precision"]
+        for intent_metrics in itervalues(metrics)
+        for slot_metrics in itervalues(intent_metrics["slots"])) / nb_slots
+    average_slot_recall = sum(
+        slot_metrics["recall"]
+        for intent_metrics in itervalues(metrics)
+        for slot_metrics in itervalues(intent_metrics["slots"])) / nb_slots
+
+    average_metrics["slot"] = {
+        "f1": average_slot_f1,
+        "precision": average_slot_precision,
+        "recall": average_slot_recall,
+    }
+    return average_metrics
+
+
 def compute_precision_recall_f1(metrics):
-    for intent_metrics in metrics.values():
+    for intent_metrics in itervalues(metrics):
         prec_rec_metrics = _compute_precision_recall_f1(
             intent_metrics["intent"])
         intent_metrics["intent"].update(prec_rec_metrics)
         if "slots" in intent_metrics:
-            for slot_metrics in intent_metrics["slots"].values():
+            for slot_metrics in itervalues(intent_metrics["slots"]):
                 prec_rec_metrics = _compute_precision_recall_f1(slot_metrics)
                 slot_metrics.update(prec_rec_metrics)
     return metrics
@@ -259,7 +319,7 @@ def _compute_precision_recall_f1(count_metrics):
 
 
 def contains_errors(utterance_metrics, check_slots):
-    for metrics in utterance_metrics.values():
+    for metrics in itervalues(utterance_metrics):
         intent_metrics = metrics["intent"]
         if intent_metrics.get(FALSE_POSITIVE, 0) > 0:
             return True
@@ -267,7 +327,7 @@ def contains_errors(utterance_metrics, check_slots):
             return True
         if not check_slots:
             continue
-        for slot_metrics in metrics["slots"].values():
+        for slot_metrics in itervalues(metrics["slots"]):
             if slot_metrics.get(FALSE_POSITIVE, 0) > 0:
                 return True
             if slot_metrics.get(FALSE_NEGATIVE, 0) > 0:
