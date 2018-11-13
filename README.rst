@@ -35,10 +35,10 @@ Snips NLU metrics API consists in the following functions:
 
 The metrics output (json) provides detailed information about:
 
+* `confusion matrix`_
 * `precision, recall and f1 scores`_ of intent classification
 * precision, recall and f1 scores of entity extraction
 * parsing errors
-* `confusion matrix`_
 
 Data
 ----
