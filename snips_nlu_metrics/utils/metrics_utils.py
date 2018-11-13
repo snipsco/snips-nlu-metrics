@@ -81,6 +81,18 @@ def not_enough_data(n_splits, train_size_ratio):
                              % (n_splits, train_size_ratio))
 
 
+def compute_split_metrics(engine_class, split, intent_list,
+                          include_slot_metrics, slot_matching_lambda):
+    """Fit and run engine on a split specified by train_dataset and
+        test_utterances"""
+    train_dataset, test_utterances = split
+    engine = engine_class()
+    engine.fit(train_dataset)
+    return compute_engine_metrics(
+        engine, test_utterances, intent_list, include_slot_metrics,
+        slot_matching_lambda)
+
+
 def compute_engine_metrics(engine, test_utterances, intent_list,
                            include_slot_metrics, slot_matching_lambda=None):
     if slot_matching_lambda is None:
@@ -223,6 +235,58 @@ def add_count_metrics(lhs, rhs):
         FALSE_POSITIVE: lhs[FALSE_POSITIVE] + rhs[FALSE_POSITIVE],
         FALSE_NEGATIVE: lhs[FALSE_NEGATIVE] + rhs[FALSE_NEGATIVE],
     }
+
+
+def compute_average_metrics(metrics):
+    nb_intents = len(metrics) - 1  # Removing the "null" intent
+    if not nb_intents:
+        return None
+
+    average_intent_f1 = sum(
+        intent_metrics["intent"]["f1"]
+        for intent, intent_metrics in iteritems(metrics)
+        if intent and intent != NONE_INTENT_NAME) / nb_intents
+    average_intent_precision = sum(
+        intent_metrics["intent"]["precision"]
+        for intent, intent_metrics in iteritems(metrics)
+        if intent and intent != NONE_INTENT_NAME) / nb_intents
+    average_intent_recall = sum(
+        intent_metrics["intent"]["recall"]
+        for intent, intent_metrics in iteritems(metrics)
+        if intent and intent != NONE_INTENT_NAME) / nb_intents
+
+    average_metrics = {
+        "intent": {
+            "f1": average_intent_f1,
+            "precision": average_intent_precision,
+            "recall": average_intent_recall,
+        },
+    }
+
+    nb_slots = sum(1 for intent_metrics in itervalues(metrics)
+                   for _ in itervalues(intent_metrics.get("slots", dict())))
+    if nb_slots == 0:
+        return average_metrics
+
+    average_slot_f1 = sum(
+        slot_metrics["f1"]
+        for intent_metrics in itervalues(metrics)
+        for slot_metrics in itervalues(intent_metrics["slots"])) / nb_slots
+    average_slot_precision = sum(
+        slot_metrics["precision"]
+        for intent_metrics in itervalues(metrics)
+        for slot_metrics in itervalues(intent_metrics["slots"])) / nb_slots
+    average_slot_recall = sum(
+        slot_metrics["recall"]
+        for intent_metrics in itervalues(metrics)
+        for slot_metrics in itervalues(intent_metrics["slots"])) / nb_slots
+
+    average_metrics["slot"] = {
+        "f1": average_slot_f1,
+        "precision": average_slot_precision,
+        "recall": average_slot_recall,
+    }
+    return average_metrics
 
 
 def compute_precision_recall_f1(metrics):

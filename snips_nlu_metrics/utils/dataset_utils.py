@@ -1,5 +1,4 @@
-from __future__ import absolute_import
-from __future__ import unicode_literals
+from __future__ import absolute_import, unicode_literals
 
 from collections import defaultdict
 from copy import deepcopy
@@ -7,8 +6,8 @@ from copy import deepcopy
 from future.utils import iteritems, itervalues
 
 from snips_nlu_metrics.utils.constants import (
-    ENTITIES, DATA, VALUE, USE_SYNONYMS, SYNONYMS, INTENTS, UTTERANCES, ENTITY,
-    TEXT)
+    DATA, ENTITIES, ENTITY, INTENTS, SYNONYMS, TEXT, USE_SYNONYMS, UTTERANCES,
+    VALUE)
 
 
 def input_string_from_chunks(chunks):

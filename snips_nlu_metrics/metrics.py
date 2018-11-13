@@ -9,58 +9,20 @@ from past.builtins import basestring
 from pathos.multiprocessing import Pool
 
 from snips_nlu_metrics.utils.constants import (
-    CONFUSION_MATRIX, INTENTS, INTENT_UTTERANCES, METRICS, PARSING_ERRORS,
-    UTTERANCES)
+    AVERAGE_METRICS, CONFUSION_MATRIX, INTENTS, INTENT_UTTERANCES, METRICS,
+    PARSING_ERRORS, UTTERANCES)
 from snips_nlu_metrics.utils.exception import NotEnoughDataError
 from snips_nlu_metrics.utils.metrics_utils import (
-    aggregate_matrices, aggregate_metrics, compute_engine_metrics,
-    compute_precision_recall_f1, create_shuffle_stratified_splits)
+    aggregate_matrices, aggregate_metrics, compute_average_metrics,
+    compute_engine_metrics, compute_precision_recall_f1, compute_split_metrics,
+    create_shuffle_stratified_splits)
 
 
-def _run_split(engine_class,
-               split,
-               intent_list,
-               include_slot_metrics,
-               slot_matching_lambda):
-    """
-        Fit and run engine on a split specified by train_dataset and
-        test_utterances
-    """
-    train_dataset, test_utterances = split
-    engine = engine_class()
-    engine.fit(train_dataset)
-    return compute_engine_metrics(
-        engine, test_utterances, intent_list, include_slot_metrics,
-        slot_matching_lambda)
-
-
-def _update_metrics(global_metrics,
-                    split_metrics,
-                    global_confusion_matrix,
-                    confusion_matrix,
-                    global_errors,
-                    errors,
-                    include_slot_metrics):
-    """
-        Update global metrics with results on split
-    """
-    global_metrics = aggregate_metrics(global_metrics,
-                                       split_metrics,
-                                       include_slot_metrics)
-    global_confusion_matrix = \
-        aggregate_matrices(global_confusion_matrix,
-                           confusion_matrix)
-    global_errors += errors
-    return global_metrics, global_confusion_matrix, global_errors
-
-
-def compute_cross_val_metrics(dataset, engine_class, nb_folds=5,
-                              train_size_ratio=1.0, drop_entities=False,
-                              include_slot_metrics=True,
-                              slot_matching_lambda=None,
-                              progression_handler=None,
-                              num_workers=1,
-                              seed=None):
+def compute_cross_val_metrics(
+        dataset, engine_class, nb_folds=5, train_size_ratio=1.0,
+        drop_entities=False, include_slot_metrics=True,
+        slot_matching_lambda=None, progression_handler=None, num_workers=1,
+        seed=None):
     """Compute end-to-end metrics on the dataset using cross validation
 
     Args:
@@ -106,8 +68,10 @@ def compute_cross_val_metrics(dataset, engine_class, nb_folds=5,
     except NotEnoughDataError as e:
         print("Skipping metrics computation because of: %s" % e.message)
         return {
+            AVERAGE_METRICS: None,
+            CONFUSION_MATRIX: None,
             METRICS: None,
-            PARSING_ERRORS: []
+            PARSING_ERRORS: [],
         }
 
     intent_list = sorted(list(dataset["intents"]))
@@ -125,28 +89,24 @@ def compute_cross_val_metrics(dataset, engine_class, nb_folds=5,
 
     results = runner(
         lambda split:
-        _run_split(engine_class,
-                   split,
-                   intent_list,
-                   include_slot_metrics,
-                   slot_matching_lambda),
+        compute_split_metrics(engine_class, split, intent_list,
+                              include_slot_metrics, slot_matching_lambda),
         splits)
 
     for split_index, (split_metrics, errors, confusion_matrix) in \
             enumerate(results):
-        global_metrics, global_confusion_matrix, global_errors = \
-            _update_metrics(global_metrics,
-                            split_metrics,
-                            global_confusion_matrix,
-                            confusion_matrix,
-                            global_errors,
-                            errors,
-                            include_slot_metrics)
+        global_metrics = aggregate_metrics(
+            global_metrics, split_metrics, include_slot_metrics)
+        global_confusion_matrix = aggregate_matrices(
+            global_confusion_matrix, confusion_matrix)
+        global_errors += errors
+
         if progression_handler is not None:
             progression_handler(
                 float(split_index + 1) / float(total_splits))
 
     global_metrics = compute_precision_recall_f1(global_metrics)
+    average_metrics = compute_average_metrics(global_metrics)
 
     nb_utterances = {intent: len(data[UTTERANCES])
                      for intent, data in iteritems(dataset[INTENTS])}
@@ -154,15 +114,16 @@ def compute_cross_val_metrics(dataset, engine_class, nb_folds=5,
         metrics[INTENT_UTTERANCES] = nb_utterances.get(intent, 0)
 
     return {
+        CONFUSION_MATRIX: global_confusion_matrix,
+        AVERAGE_METRICS: average_metrics,
         METRICS: global_metrics,
         PARSING_ERRORS: global_errors,
-        CONFUSION_MATRIX: global_confusion_matrix
     }
 
 
-def compute_train_test_metrics(train_dataset, test_dataset, engine_class,
-                               include_slot_metrics=True,
-                               slot_matching_lambda=None):
+def compute_train_test_metrics(
+        train_dataset, test_dataset, engine_class, include_slot_metrics=True,
+        slot_matching_lambda=None):
     """Compute end-to-end metrics on `test_dataset` after having trained on
     `train_dataset`
 
@@ -211,12 +172,14 @@ def compute_train_test_metrics(train_dataset, test_dataset, engine_class,
         engine, test_utterances, intent_list, include_slot_metrics,
         slot_matching_lambda)
     metrics = compute_precision_recall_f1(metrics)
+    average_metrics = compute_average_metrics(metrics)
     nb_utterances = {intent: len(data[UTTERANCES])
                      for intent, data in iteritems(train_dataset[INTENTS])}
     for intent, intent_metrics in iteritems(metrics):
         intent_metrics[INTENT_UTTERANCES] = nb_utterances.get(intent, 0)
     return {
+        CONFUSION_MATRIX: confusion_matrix,
+        AVERAGE_METRICS: average_metrics,
         METRICS: metrics,
         PARSING_ERRORS: errors,
-        CONFUSION_MATRIX: confusion_matrix
     }
