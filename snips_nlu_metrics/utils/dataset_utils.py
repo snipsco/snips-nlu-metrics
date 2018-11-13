@@ -4,7 +4,7 @@ from __future__ import unicode_literals
 from collections import defaultdict
 from copy import deepcopy
 
-from future.utils import iteritems
+from future.utils import iteritems, itervalues
 
 from snips_nlu_metrics.utils.constants import (
     ENTITIES, DATA, VALUE, USE_SYNONYMS, SYNONYMS, INTENTS, UTTERANCES, ENTITY,
@@ -23,7 +23,7 @@ def get_utterances_subset(utterances, ratio):
         utterances_dict[intent_name].append(deepcopy(utterance))
 
     utterances_subset = []
-    for (intent_name, utterances) in utterances_dict.items():
+    for (intent_name, utterances) in iteritems(utterances_dict):
         nb_utterances = int(ratio * len(utterances))
         utterances_subset += [(intent_name, u)
                               for u in utterances[:nb_utterances]]
@@ -51,7 +51,7 @@ def get_declared_entities_values(dataset):
 
 def get_intent_utterances_entities_value(dataset):
     existing_entities = defaultdict(set)
-    for intent in dataset[INTENTS].values():
+    for intent in itervalues(dataset[INTENTS]):
         for u in intent[UTTERANCES]:
             for chunk in u[DATA]:
                 if ENTITY not in chunk or is_builtin_entity(chunk[ENTITY]):

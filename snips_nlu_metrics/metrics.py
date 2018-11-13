@@ -2,8 +2,9 @@ from __future__ import division, print_function, unicode_literals
 
 import io
 import json
-
 from builtins import map
+
+from future.utils import iteritems
 from past.builtins import basestring
 from pathos.multiprocessing import Pool
 
@@ -148,8 +149,8 @@ def compute_cross_val_metrics(dataset, engine_class, nb_folds=5,
     global_metrics = compute_precision_recall_f1(global_metrics)
 
     nb_utterances = {intent: len(data[UTTERANCES])
-                     for intent, data in dataset[INTENTS].items()}
-    for intent, metrics in global_metrics.items():
+                     for intent, data in iteritems(dataset[INTENTS])}
+    for intent, metrics in iteritems(global_metrics):
         metrics[INTENT_UTTERANCES] = nb_utterances.get(intent, 0)
 
     return {
@@ -203,7 +204,7 @@ def compute_train_test_metrics(train_dataset, test_dataset, engine_class,
     engine.fit(train_dataset)
     test_utterances = [
         (intent_name, utterance)
-        for intent_name, intent_data in test_dataset[INTENTS].items()
+        for intent_name, intent_data in iteritems(test_dataset[INTENTS])
         for utterance in intent_data[UTTERANCES]
     ]
     metrics, errors, confusion_matrix = compute_engine_metrics(
@@ -211,8 +212,8 @@ def compute_train_test_metrics(train_dataset, test_dataset, engine_class,
         slot_matching_lambda)
     metrics = compute_precision_recall_f1(metrics)
     nb_utterances = {intent: len(data[UTTERANCES])
-                     for intent, data in train_dataset[INTENTS].items()}
-    for intent, intent_metrics in metrics.items():
+                     for intent, data in iteritems(train_dataset[INTENTS])}
+    for intent, intent_metrics in iteritems(metrics):
         intent_metrics[INTENT_UTTERANCES] = nb_utterances.get(intent, 0)
     return {
         METRICS: metrics,
