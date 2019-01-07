@@ -6,7 +6,10 @@ from snips_nlu_metrics import Engine
 def dummy_parsing_result(text):
     return {
         "input": text,
-        "intent": None,
+        "intent": {
+            "intentName": None,
+            "probability": 0.5
+        },
         "slots": []
     }
 
