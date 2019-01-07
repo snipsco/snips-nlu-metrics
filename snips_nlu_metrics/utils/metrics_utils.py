@@ -116,6 +116,8 @@ def compute_engine_metrics(engine, test_utterances, intent_list,
 
         if parsing["intent"] is not None:
             predicted_intent = parsing["intent"]["intentName"]
+            if predicted_intent is None:
+                predicted_intent = NONE_INTENT_NAME
         else:
             # Use a string here to avoid having a None key in the metrics dict
             predicted_intent = NONE_INTENT_NAME
@@ -238,22 +240,24 @@ def add_count_metrics(lhs, rhs):
 
 
 def compute_average_metrics(metrics):
-    nb_intents = len(metrics) - 1  # Removing the "null" intent
+    metrics = deepcopy(metrics)
+    metrics = {
+        intent: intent_metrics for intent, intent_metrics in iteritems(metrics)
+        if intent and intent != NONE_INTENT_NAME
+    }
+    nb_intents = len(metrics)
     if not nb_intents:
         return None
 
     average_intent_f1 = sum(
         intent_metrics["intent"]["f1"]
-        for intent, intent_metrics in iteritems(metrics)
-        if intent and intent != NONE_INTENT_NAME) / nb_intents
+        for intent, intent_metrics in iteritems(metrics)) / nb_intents
     average_intent_precision = sum(
         intent_metrics["intent"]["precision"]
-        for intent, intent_metrics in iteritems(metrics)
-        if intent and intent != NONE_INTENT_NAME) / nb_intents
+        for intent, intent_metrics in iteritems(metrics)) / nb_intents
     average_intent_recall = sum(
         intent_metrics["intent"]["recall"]
-        for intent, intent_metrics in iteritems(metrics)
-        if intent and intent != NONE_INTENT_NAME) / nb_intents
+        for intent, intent_metrics in iteritems(metrics)) / nb_intents
 
     average_metrics = {
         "intent": {
