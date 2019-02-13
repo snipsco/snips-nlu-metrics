@@ -21,8 +21,8 @@ from snips_nlu_metrics.utils.metrics_utils import (
 def compute_cross_val_metrics(
         dataset, engine_class, nb_folds=5, train_size_ratio=1.0,
         drop_entities=False, include_slot_metrics=True,
-        slot_matching_lambda=None, progression_handler=None, num_workers=1,
-        seed=None):
+        slot_matching_lambda=None, out_of_domain_utterances=None,
+        progression_handler=None, num_workers=1, seed=None):
     """Compute end-to-end metrics on the dataset using cross validation
 
     Args:
@@ -44,6 +44,9 @@ def compute_cross_val_metrics(
             `expected_slot` corresponds to the slot as defined in the dataset,
             and `actual_slot` corresponds to the slot as returned by the NLU
             default(None)
+        out_of_domain_utterances (list, optional): If defined, list of 
+            out-of-domain utterances to be added to the pool of test utterances 
+            in each split
         progression_handler (lambda, optional): handler called at each
             progression (%) step (default=None)
         num_workers (int, optional): number of workers to use. Each worker
@@ -64,7 +67,8 @@ def compute_cross_val_metrics(
 
     try:
         splits = create_shuffle_stratified_splits(
-            dataset, nb_folds, train_size_ratio, drop_entities, seed)
+            dataset, nb_folds, train_size_ratio, drop_entities,
+            out_of_domain_utterances, seed)
     except NotEnoughDataError as e:
         print("Skipping metrics computation because of: %s" % e.message)
         return {
@@ -106,7 +110,10 @@ def compute_cross_val_metrics(
                 float(split_index + 1) / float(total_splits))
 
     global_metrics = compute_precision_recall_f1(global_metrics)
-    average_metrics = compute_average_metrics(global_metrics)
+
+    average_metrics = compute_average_metrics(
+        global_metrics,
+        ignore_none_intent=True if out_of_domain_utterances is None else False)
 
     nb_utterances = {intent: len(data[UTTERANCES])
                      for intent, data in iteritems(dataset[INTENTS])}
