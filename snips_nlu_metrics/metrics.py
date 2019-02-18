@@ -22,7 +22,7 @@ def compute_cross_val_metrics(
         dataset, engine_class, nb_folds=5, train_size_ratio=1.0,
         drop_entities=False, include_slot_metrics=True,
         slot_matching_lambda=None, progression_handler=None, num_workers=1,
-        seed=None):
+        seed=None, include_correct_slot_metrics=False):
     """Compute end-to-end metrics on the dataset using cross validation
 
     Args:
@@ -49,6 +49,8 @@ def compute_cross_val_metrics(
         num_workers (int, optional): number of workers to use. Each worker
             is assigned a certain number of splits (default=1)
         seed (int, optional): seed for the split creation
+        include_correct_slot_metrics (bool, optional) : if you want to get
+            corrects slots results (with the slots in error)
 
     Returns:
         dict: Metrics results containing the following data
@@ -90,7 +92,8 @@ def compute_cross_val_metrics(
     results = runner(
         lambda split:
         compute_split_metrics(engine_class, split, intent_list,
-                              include_slot_metrics, slot_matching_lambda),
+                              include_slot_metrics, slot_matching_lambda,
+                              include_correct_slot_metrics=include_correct_slot_metrics ),
         splits)
 
     for split_index, (split_metrics, errors, confusion_matrix) in \

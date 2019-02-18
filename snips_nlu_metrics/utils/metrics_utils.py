@@ -83,7 +83,8 @@ def not_enough_data(n_splits, train_size_ratio):
 
 
 def compute_split_metrics(engine_class, split, intent_list,
-                          include_slot_metrics, slot_matching_lambda):
+                          include_slot_metrics, slot_matching_lambda,
+                          include_correct_slot_metrics=False):
     """Fit and run engine on a split specified by train_dataset and
         test_utterances"""
     train_dataset, test_utterances = split
@@ -91,11 +92,29 @@ def compute_split_metrics(engine_class, split, intent_list,
     engine.fit(train_dataset)
     return compute_engine_metrics(
         engine, test_utterances, intent_list, include_slot_metrics,
-        slot_matching_lambda)
+        slot_matching_lambda,
+        include_correct_slot_metrics=include_correct_slot_metrics)
 
 
 def compute_engine_metrics(engine, test_utterances, intent_list,
-                           include_slot_metrics, slot_matching_lambda=None):
+                           include_slot_metrics, slot_matching_lambda=None,
+                           include_correct_slot_metrics=False):
+    """
+
+    Args:
+        engine: snips_nlu_metrics.engine.Engine
+        test_utterances: iterator((intent_name: str, uterance: str))
+        intent_list: list(str)
+        include_slot_metrics: bool
+        slot_matching_lambda: def (predicted_slot: dict, expected_slot: dict) -> bool
+        include_correct_slot_metrics: bool
+    Returns:
+        tuple(
+            metrics: dict,
+            predictions : list,
+            confusion_matrix: dict(list(list(int)))
+        )
+    """
     if slot_matching_lambda is None:
         slot_matching_lambda = exact_match
     metrics = dict()
@@ -142,11 +161,19 @@ def compute_engine_metrics(engine, test_utterances, intent_list,
             if not include_slot_metrics:
                 parsing.pop("slots")
             errors.append({
+                "is_correct": False,
                 "nlu_output": parsing,
                 "expected_output": format_expected_output(
                     actual_intent, utterance, include_slot_metrics)
             })
         else:
+            if include_correct_slot_metrics:
+                errors.append({
+                    "is_correct": True,
+                    "nlu_output": parsing,
+                    "expected_output": format_expected_output(
+                        actual_intent, utterance, include_slot_metrics)
+                })
             utterance_metrics[actual_intent][EXACT_PARSINGS] = 1
         metrics = aggregate_metrics(metrics, utterance_metrics,
                                     include_slot_metrics)
