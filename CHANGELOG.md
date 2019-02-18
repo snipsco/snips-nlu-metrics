@@ -1,6 +1,13 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+## [0.14.1] - 2019-01-07
+### Added
+- Support for new NLU output format
+
+### Fixed
+- Bug with None intent when computing average metrics
+
 ## [0.14.0] - 2018-11-13
 ### Added
 - Possibility to use parallel workers
@@ -28,6 +35,7 @@ All notable changes to this project will be documented in this file.
 - Samples
 
 
+[0.14.1]: https://github.com/snipsco/snips-nlu-metrics/compare/0.14.0...0.14.1
 [0.14.0]: https://github.com/snipsco/snips-nlu-metrics/compare/0.13.0...0.14.0
 [0.13.0]: https://github.com/snipsco/snips-nlu-metrics/compare/0.12.0...0.13.0
 [0.12.0]: https://github.com/snipsco/snips-nlu-metrics/compare/0.11.1...0.12.0
