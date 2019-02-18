@@ -85,6 +85,7 @@ class TestMetricsUtils(unittest.TestCase):
         # Then
         expected_metrics = {
             "intent1": {
+                "exact_parsings": 1,
                 "slots": {
                     "slot1": {
                         "false_positive": 1,
@@ -104,6 +105,7 @@ class TestMetricsUtils(unittest.TestCase):
                 }
             },
             "intent2": {
+                "exact_parsings": 1,
                 "slots": {
                     "slot3": {
                         "false_positive": 1,
@@ -485,6 +487,7 @@ class TestMetricsUtils(unittest.TestCase):
         # Given
         lhs_metrics = {
             "intent1": {
+                "exact_parsings": 2,
                 "intent": {
                     "false_positive": 4,
                     "true_positive": 6,
@@ -499,6 +502,7 @@ class TestMetricsUtils(unittest.TestCase):
                 },
             },
             "intent2": {
+                "exact_parsings": 1,
                 "intent": {
                     "false_positive": 3,
                     "true_positive": 2,
@@ -516,6 +520,7 @@ class TestMetricsUtils(unittest.TestCase):
 
         rhs_metrics = {
             "intent1": {
+                "exact_parsings": 3,
                 "intent": {
                     "false_positive": 3,
                     "true_positive": 3,
@@ -530,6 +535,7 @@ class TestMetricsUtils(unittest.TestCase):
                 }
             },
             "intent2": {
+                "exact_parsings": 5,
                 "intent": {
                     "false_positive": 4,
                     "true_positive": 5,
@@ -538,6 +544,7 @@ class TestMetricsUtils(unittest.TestCase):
                 "slots": {}
             },
             "intent3": {
+                "exact_parsings": 0,
                 "intent": {
                     "false_positive": 1,
                     "true_positive": 7,
@@ -553,6 +560,7 @@ class TestMetricsUtils(unittest.TestCase):
         # Then
         expected_metrics = {
             "intent1": {
+                "exact_parsings": 5,
                 "intent": {
                     "false_positive": 7,
                     "true_positive": 9,
@@ -568,6 +576,7 @@ class TestMetricsUtils(unittest.TestCase):
                     }
             },
             "intent2": {
+                "exact_parsings": 6,
                 "intent": {
                     "false_positive": 7,
                     "true_positive": 7,
@@ -582,6 +591,7 @@ class TestMetricsUtils(unittest.TestCase):
                 }
             },
             "intent3": {
+                "exact_parsings": 0,
                 "intent": {
                     "false_positive": 1,
                     "true_positive": 7,
