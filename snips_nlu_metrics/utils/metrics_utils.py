@@ -24,8 +24,8 @@ INITIAL_METRICS = {
 
 
 def create_shuffle_stratified_splits(dataset, n_splits, train_size_ratio=1.0,
-                                     drop_entities=False,
-                                     out_of_domain_utterances=None, seed=None):
+                                     drop_entities=False, seed=None,
+                                     out_of_domain_utterances=None):
     if train_size_ratio > 1.0 or train_size_ratio < 0:
         raise ValueError("Invalid value for train size ratio: %s"
                          % train_size_ratio)
