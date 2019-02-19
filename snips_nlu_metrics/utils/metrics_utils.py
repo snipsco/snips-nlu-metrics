@@ -263,11 +263,6 @@ def compute_average_metrics(metrics, ignore_none_intent=True):
             intent: intent_metrics for intent, intent_metrics in
             iteritems(metrics) if intent and intent != NONE_INTENT_NAME
         }
-    else:
-        metrics = {
-            intent: intent_metrics for intent, intent_metrics in
-            iteritems(metrics)
-        }
 
     nb_intents = len(metrics)
     if not nb_intents:
