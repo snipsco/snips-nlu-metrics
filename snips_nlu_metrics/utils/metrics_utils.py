@@ -24,7 +24,8 @@ INITIAL_METRICS = {
 
 
 def create_shuffle_stratified_splits(dataset, n_splits, train_size_ratio=1.0,
-                                     drop_entities=False, seed=None):
+                                     drop_entities=False, seed=None,
+                                     out_of_domain_utterances=None):
     if train_size_ratio > 1.0 or train_size_ratio < 0:
         raise ValueError("Invalid value for train size ratio: %s"
                          % train_size_ratio)
@@ -72,6 +73,15 @@ def create_shuffle_stratified_splits(dataset, n_splits, train_size_ratio=1.0,
             splits.append((train_dataset, test_utterances))
     except ValueError:
         not_enough_data(n_splits, train_size_ratio)
+
+    if out_of_domain_utterances is not None:
+        additional_test_utterances = [
+            [NONE_INTENT_NAME, {DATA: [{TEXT: utterance}]}]
+            for utterance in out_of_domain_utterances
+        ]
+        for split in splits:
+            split[1].extend(additional_test_utterances)
+
     return splits
 
 
@@ -246,12 +256,14 @@ def add_count_metrics(lhs, rhs):
     }
 
 
-def compute_average_metrics(metrics):
+def compute_average_metrics(metrics, ignore_none_intent=True):
     metrics = deepcopy(metrics)
-    metrics = {
-        intent: intent_metrics for intent, intent_metrics in iteritems(metrics)
-        if intent and intent != NONE_INTENT_NAME
-    }
+    if ignore_none_intent:
+        metrics = {
+            intent: intent_metrics for intent, intent_metrics in
+            iteritems(metrics) if intent and intent != NONE_INTENT_NAME
+        }
+
     nb_intents = len(metrics)
     if not nb_intents:
         return None

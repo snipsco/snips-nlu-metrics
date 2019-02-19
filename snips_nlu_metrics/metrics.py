@@ -22,7 +22,7 @@ def compute_cross_val_metrics(
         dataset, engine_class, nb_folds=5, train_size_ratio=1.0,
         drop_entities=False, include_slot_metrics=True,
         slot_matching_lambda=None, progression_handler=None, num_workers=1,
-        seed=None):
+        seed=None, out_of_domain_utterances=None):
     """Compute end-to-end metrics on the dataset using cross validation
 
     Args:
@@ -49,13 +49,17 @@ def compute_cross_val_metrics(
         num_workers (int, optional): number of workers to use. Each worker
             is assigned a certain number of splits (default=1)
         seed (int, optional): seed for the split creation
+        out_of_domain_utterances (list, optional): If defined, list of 
+            out-of-domain utterances to be added to the pool of test utterances 
+            in each split
 
     Returns:
         dict: Metrics results containing the following data
-
+    
             - "metrics": the computed metrics
             - "parsing_errors": the list of parsing errors
-
+            - "confusion_matrix": the computed confusion matrix
+            - "average_metrics": the metrics averaged over all intents    
     """
 
     if isinstance(dataset, basestring):
@@ -64,7 +68,8 @@ def compute_cross_val_metrics(
 
     try:
         splits = create_shuffle_stratified_splits(
-            dataset, nb_folds, train_size_ratio, drop_entities, seed)
+            dataset, nb_folds, train_size_ratio, drop_entities,
+            out_of_domain_utterances, seed)
     except NotEnoughDataError as e:
         print("Skipping metrics computation because of: %s" % e.message)
         return {
@@ -106,7 +111,10 @@ def compute_cross_val_metrics(
                 float(split_index + 1) / float(total_splits))
 
     global_metrics = compute_precision_recall_f1(global_metrics)
-    average_metrics = compute_average_metrics(global_metrics)
+
+    average_metrics = compute_average_metrics(
+        global_metrics,
+        ignore_none_intent=True if out_of_domain_utterances is None else False)
 
     nb_utterances = {intent: len(data[UTTERANCES])
                      for intent, data in iteritems(dataset[INTENTS])}
@@ -147,6 +155,8 @@ def compute_train_test_metrics(
 
             - "metrics": the computed metrics
             - "parsing_errors": the list of parsing errors
+            - "confusion_matrix": the computed confusion matrix
+            - "average_metrics": the metrics averaged over all intents
     """
 
     if isinstance(train_dataset, basestring):
