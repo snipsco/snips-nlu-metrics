@@ -21,8 +21,8 @@ from snips_nlu_metrics.utils.metrics_utils import (
 def compute_cross_val_metrics(
         dataset, engine_class, nb_folds=5, train_size_ratio=1.0,
         drop_entities=False, include_slot_metrics=True,
-        slot_matching_lambda=None, out_of_domain_utterances=None,
-        progression_handler=None, num_workers=1, seed=None):
+        slot_matching_lambda=None, progression_handler=None, num_workers=1,
+        seed=None, out_of_domain_utterances=None):
     """Compute end-to-end metrics on the dataset using cross validation
 
     Args:
@@ -44,21 +44,22 @@ def compute_cross_val_metrics(
             `expected_slot` corresponds to the slot as defined in the dataset,
             and `actual_slot` corresponds to the slot as returned by the NLU
             default(None)
-        out_of_domain_utterances (list, optional): If defined, list of 
-            out-of-domain utterances to be added to the pool of test utterances 
-            in each split
         progression_handler (lambda, optional): handler called at each
             progression (%) step (default=None)
         num_workers (int, optional): number of workers to use. Each worker
             is assigned a certain number of splits (default=1)
         seed (int, optional): seed for the split creation
+        out_of_domain_utterances (list, optional): If defined, list of 
+            out-of-domain utterances to be added to the pool of test utterances 
+            in each split
 
     Returns:
         dict: Metrics results containing the following data
-
+    
             - "metrics": the computed metrics
             - "parsing_errors": the list of parsing errors
-
+            - "confusion_matrix": the computed confusion matrix
+            - "average_metrics": the metrics averaged over all intents    
     """
 
     if isinstance(dataset, basestring):
@@ -154,6 +155,8 @@ def compute_train_test_metrics(
 
             - "metrics": the computed metrics
             - "parsing_errors": the list of parsing errors
+            - "confusion_matrix": the computed confusion matrix
+            - "average_metrics": the metrics averaged over all intents
     """
 
     if isinstance(train_dataset, basestring):
