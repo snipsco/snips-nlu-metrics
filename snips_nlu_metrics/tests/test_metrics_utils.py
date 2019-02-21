@@ -157,7 +157,8 @@ class TestMetricsUtils(unittest.TestCase):
                         "intentName": "intent2",
                         "probability": 1.0
                     }
-                }
+                },
+                "is_exact": False
             },
             {
                 "expected_output": {
@@ -195,7 +196,8 @@ class TestMetricsUtils(unittest.TestCase):
                         "intentName": "intent1",
                         "probability": 1.0
                     }
-                }
+                },
+                "is_exact": False
             },
             {
                 "expected_output": {
@@ -233,7 +235,8 @@ class TestMetricsUtils(unittest.TestCase):
                         "intentName": "intent2",
                         "probability": 1.0
                     }
-                }
+                },
+                "is_exact": False
             }
         ]
 
