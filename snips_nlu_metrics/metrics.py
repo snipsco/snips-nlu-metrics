@@ -69,7 +69,7 @@ def compute_cross_val_metrics(
     try:
         splits = create_shuffle_stratified_splits(
             dataset, nb_folds, train_size_ratio, drop_entities,
-            out_of_domain_utterances, seed)
+            seed, out_of_domain_utterances)
     except NotEnoughDataError as e:
         print("Skipping metrics computation because of: %s" % e.message)
         return {
