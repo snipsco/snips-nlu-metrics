@@ -131,6 +131,7 @@ def compute_engine_metrics(engine, test_utterances, intent_list,
             predicted_intent = parsing["intent"]["intentName"]
             if predicted_intent is None:
                 predicted_intent = NONE_INTENT_NAME
+                parsing["intent"]["intentName"] = NONE_INTENT_NAME
         else:
             # Use a string here to avoid having a None key in the metrics dict
             predicted_intent = NONE_INTENT_NAME
