@@ -93,6 +93,7 @@ def compute_cross_val_metrics(
         pool = Pool(effective_num_workers)
         runner = pool.imap_unordered
     else:
+        pool = None
         runner = map
 
     results = runner(
@@ -101,6 +102,10 @@ def compute_cross_val_metrics(
                               include_slot_metrics, slot_matching_lambda,
                               persist_exact_parsings),
         splits)
+
+    if pool is not None:
+        pool.close()
+        pool.join()
 
     for split_index, (split_metrics, parsings, confusion_matrix) in \
             enumerate(results):
