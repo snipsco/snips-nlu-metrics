@@ -2,6 +2,9 @@ from __future__ import division, print_function, unicode_literals
 
 import io
 import json
+import logging
+import traceback
+
 from builtins import map
 
 from future.utils import iteritems
@@ -16,6 +19,8 @@ from snips_nlu_metrics.utils.metrics_utils import (
     aggregate_matrices, aggregate_metrics, compute_average_metrics,
     compute_engine_metrics, compute_precision_recall_f1, compute_split_metrics,
     create_shuffle_stratified_splits)
+
+LOGGER = logging.getLogger(__name__)
 
 
 def compute_cross_val_metrics(
@@ -96,16 +101,18 @@ def compute_cross_val_metrics(
         pool = None
         runner = map
 
-    results = runner(
-        lambda split:
-        compute_split_metrics(engine_class, split, intent_list,
-                              include_slot_metrics, slot_matching_lambda,
-                              persist_exact_parsings),
-        splits)
+    def compute_split_metrics_wrapper(split):
+        try:
+            return compute_split_metrics(engine_class, split, intent_list,
+                                         include_slot_metrics,
+                                         slot_matching_lambda,
+                                         persist_exact_parsings)
+        except:
+            LOGGER.error('FAILURE: %s', traceback.format_exc())
+            raise RuntimeError
 
-    if pool is not None:
-        pool.close()
-        pool.join()
+    results = runner(compute_split_metrics_wrapper,
+                     splits)
 
     for split_index, (split_metrics, parsings, confusion_matrix) in \
             enumerate(results):
@@ -118,6 +125,10 @@ def compute_cross_val_metrics(
         if progression_handler is not None:
             progression_handler(
                 float(split_index + 1) / float(total_splits))
+
+    if pool is not None:
+        pool.terminate()
+        pool.join()
 
     global_metrics = compute_precision_recall_f1(global_metrics)
 
