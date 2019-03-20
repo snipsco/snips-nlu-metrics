@@ -105,22 +105,27 @@ def not_enough_data(dataset, n_splits, train_size_ratio,
 
 def compute_split_metrics(engine_class, split, intent_list,
                           include_slot_metrics, slot_matching_lambda,
-                          include_exact_parsings):
+                          include_exact_parsings, list_runtime_params):
     """Fit and run engine on a split specified by train_dataset and
         test_utterances"""
     train_dataset, test_utterances = split
     engine = engine_class()
     engine.fit(train_dataset)
-    return compute_engine_metrics(
+    return [compute_engine_metrics(
         engine, test_utterances, intent_list, include_slot_metrics,
-        slot_matching_lambda, include_exact_parsings)
+        slot_matching_lambda, include_exact_parsings, runtime_params=runtime_params)
+        for runtime_params in list_runtime_params]
 
 
 def compute_engine_metrics(engine, test_utterances, intent_list,
                            include_slot_metrics, slot_matching_lambda=None,
-                           include_exact_parsings=False):
+                           include_exact_parsings=False,
+                           runtime_params=None):
+
     if slot_matching_lambda is None:
         slot_matching_lambda = exact_match
+    if runtime_params is None:
+        runtime_params = {}
     metrics = dict()
     intent_list = intent_list + [NONE_INTENT_NAME]
     confusion_matrix = dict(
@@ -139,7 +144,7 @@ def compute_engine_metrics(engine, test_utterances, intent_list,
         actual_slots = [chunk for chunk in utterance[DATA] if
                         SLOT_NAME in chunk]
         input_string = input_string_from_chunks(utterance[DATA])
-        parsing = engine.parse(input_string)
+        parsing = engine.parse(input_string, **runtime_params)
 
         if parsing["intent"] is not None:
             predicted_intent = parsing["intent"]["intentName"]
