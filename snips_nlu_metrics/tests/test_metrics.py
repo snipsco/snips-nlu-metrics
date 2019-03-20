@@ -6,7 +6,7 @@ import unittest
 from snips_nlu_metrics.metrics import (compute_cross_val_metrics,
                                        compute_train_test_metrics)
 from snips_nlu_metrics.tests.mock_engine import MockEngine
-from snips_nlu_metrics.utils.constants import METRICS, PARSING_ERRORS, \
+from snips_nlu_metrics.utils.constants import METRICS, PARSINGS, \
     CONFUSION_MATRIX, AVERAGE_METRICS
 
 
@@ -182,7 +182,7 @@ class TestMetrics(unittest.TestCase):
             AVERAGE_METRICS: None,
             CONFUSION_MATRIX: None,
             METRICS: None,
-            PARSING_ERRORS: []
+            PARSINGS: []
         }
         self.assertDictEqual(expected_result, result)
 
