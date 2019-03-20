@@ -65,7 +65,7 @@ def compute_cross_val_metrics(
         dict: Metrics results containing the following data
     
             - "metrics": the computed metrics
-            - "persisted_parsings": the list of parsings
+            - "parsings": the list of parsings
             - "confusion_matrix": the computed confusion matrix
             - "average_metrics": the metrics averaged over all intents    
     """
@@ -116,6 +116,7 @@ def compute_cross_val_metrics(
 
     for split_index, (split_metrics, parsings, confusion_matrix) in \
             enumerate(results):
+        LOGGER.info("Processing result split %d", split_index)
         global_metrics = aggregate_metrics(
             global_metrics, split_metrics, include_slot_metrics)
         global_confusion_matrix = aggregate_matrices(
@@ -126,6 +127,7 @@ def compute_cross_val_metrics(
             progression_handler(
                 float(split_index + 1) / float(total_splits))
 
+    LOGGER.info("About to close pool")
     if pool is not None:
         pool.terminate()
         pool.join()
