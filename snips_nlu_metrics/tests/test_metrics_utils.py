@@ -310,7 +310,6 @@ class TestMetricsUtils(unittest.TestCase):
 
     def test_should_compute_utterance_metrics_when_correct_intent(self):
         # Given
-        text = "this is intent1 with slot1_value and slot2_value"
         actual_intent = "intent1"
         actual_slots = [
             {
@@ -372,7 +371,6 @@ class TestMetricsUtils(unittest.TestCase):
 
     def test_should_exclude_slot_metrics_when_specified(self):
         # Given
-        text = "this is intent1 with slot1_value and slot2_value"
         actual_intent = "intent1"
         actual_slots = [
             {
@@ -420,7 +418,6 @@ class TestMetricsUtils(unittest.TestCase):
 
     def test_should_use_slot_matching_lambda_to_compute_metrics(self):
         # Given
-        text = "this is intent1 with slot1_value and slot2_value"
         actual_intent = "intent1"
         actual_slots = [
             {
