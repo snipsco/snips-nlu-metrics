@@ -26,10 +26,10 @@ def compute_cross_val_metrics(*args, **kwargs):
         raise RuntimeError(
             "list_runtime_params must not be set when using "
             "this version of compute_cross_val_metrics.")
-    return compute_cross_val_metrics_grid(*args, **kwargs)[0]
+    return compute_cross_val_metrics_grid_runtime(*args, **kwargs)[0]
 
 
-def compute_cross_val_metrics_grid(
+def compute_cross_val_metrics_grid_runtime(
         dataset, engine_class, nb_folds=5, train_size_ratio=1.0,
         drop_entities=False, include_slot_metrics=True,
         slot_matching_lambda=None, progression_handler=None, num_workers=1,
@@ -124,7 +124,7 @@ def compute_cross_val_metrics_grid(
 
     for split_index, list_results in enumerate(results):
         for runtime_params_idx in range(len(list_runtime_params)):
-            split_metrics, errors, exact_parsings, confusion_matrix = list_results[0]
+            split_metrics, errors, exact_parsings, confusion_matrix = list_results[runtime_params_idx]
 
             list_global_metrics[runtime_params_idx] = aggregate_metrics(
                 list_global_metrics[runtime_params_idx], split_metrics, include_slot_metrics)
