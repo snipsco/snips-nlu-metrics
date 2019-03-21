@@ -22,7 +22,7 @@ install_requires = [
     "numpy>=1.7,<2.0",
     "scipy>=1.0,<2.0",
     "scikit-learn>=0.19,<0.20",
-    "pathos~=0.2"
+    "joblib>=0.13,<0.14"
 ]
 
 extras_require = {

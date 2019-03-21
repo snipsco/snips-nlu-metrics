@@ -3,24 +3,22 @@ from __future__ import division, print_function, unicode_literals
 import io
 import json
 import logging
-import traceback
-
 from builtins import map
 
 from future.utils import iteritems
+from joblib import Parallel, delayed
 from past.builtins import basestring
-from pathos.multiprocessing import Pool
 
 from snips_nlu_metrics.utils.constants import (
     AVERAGE_METRICS, CONFUSION_MATRIX, INTENTS, INTENT_UTTERANCES, METRICS,
-    UTTERANCES, PARSINGS)
+    PARSING_ERRORS, UTTERANCES)
 from snips_nlu_metrics.utils.exception import NotEnoughDataError
 from snips_nlu_metrics.utils.metrics_utils import (
     aggregate_matrices, aggregate_metrics, compute_average_metrics,
     compute_engine_metrics, compute_precision_recall_f1, compute_split_metrics,
     create_shuffle_stratified_splits)
 
-LOGGER = logging.getLogger(__name__)
+logger = logging.getLogger(__name__)
 
 
 def compute_cross_val_metrics(
@@ -65,7 +63,7 @@ def compute_cross_val_metrics(
         dict: Metrics results containing the following data
     
             - "metrics": the computed metrics
-            - "parsings": the list of parsings
+            - "parsing_errors": the list of parsing errors
             - "confusion_matrix": the computed confusion matrix
             - "average_metrics": the metrics averaged over all intents    
     """
@@ -79,58 +77,47 @@ def compute_cross_val_metrics(
             dataset, nb_folds, train_size_ratio, drop_entities,
             seed, out_of_domain_utterances)
     except NotEnoughDataError as e:
-        print("Skipping metrics computation because of: %s" % e.message)
+        logger.warning("Skipping metrics computation because of: %s"
+                       % e.message)
         return {
             AVERAGE_METRICS: None,
             CONFUSION_MATRIX: None,
             METRICS: None,
-            PARSINGS: [],
+            PARSING_ERRORS: [],
         }
 
     intent_list = sorted(list(dataset["intents"]))
     global_metrics = dict()
     global_confusion_matrix = None
-    global_parsings = []
+    global_errors = []
     total_splits = len(splits)
 
-    if num_workers > 1:
-        effective_num_workers = min(num_workers, len(splits))
-        pool = Pool(effective_num_workers)
-        runner = pool.imap_unordered
+    def compute_metrics(split_):
+        logger.info("Computing metrics for dataset split ...")
+        return compute_split_metrics(
+            engine_class, split_, intent_list, include_slot_metrics,
+            slot_matching_lambda)
+
+    effective_num_workers = min(num_workers, len(splits))
+    if effective_num_workers > 1:
+        parallel = Parallel(n_jobs=effective_num_workers)
+        results = parallel(delayed(compute_metrics)(split) for split in splits)
     else:
-        pool = None
-        runner = map
+        results = map(compute_metrics, splits)
 
-    def compute_split_metrics_wrapper(split):
-        try:
-            return compute_split_metrics(engine_class, split, intent_list,
-                                         include_slot_metrics,
-                                         slot_matching_lambda,
-                                         persist_exact_parsings)
-        except:
-            LOGGER.error('FAILURE: %s', traceback.format_exc())
-            raise RuntimeError
-
-    results = runner(compute_split_metrics_wrapper,
-                     splits)
-
-    for split_index, (split_metrics, parsings, confusion_matrix) in \
-            enumerate(results):
-        LOGGER.info("Processing result split %d", split_index)
+    for result in enumerate(results):
+        split_index, (split_metrics, errors, confusion_matrix) = result
         global_metrics = aggregate_metrics(
             global_metrics, split_metrics, include_slot_metrics)
         global_confusion_matrix = aggregate_matrices(
             global_confusion_matrix, confusion_matrix)
-        global_parsings += parsings
+        global_errors += errors
+        logger.info("Done computing %d/%d splits"
+                    % (split_index + 1, total_splits))
 
         if progression_handler is not None:
             progression_handler(
                 float(split_index + 1) / float(total_splits))
-
-    LOGGER.info("About to close pool")
-    if pool is not None:
-        pool.terminate()
-        pool.join()
 
     global_metrics = compute_precision_recall_f1(global_metrics)
 
@@ -147,7 +134,7 @@ def compute_cross_val_metrics(
         CONFUSION_MATRIX: global_confusion_matrix,
         AVERAGE_METRICS: average_metrics,
         METRICS: global_metrics,
-        PARSINGS: global_parsings,
+        PARSING_ERRORS: global_errors,
     }
 
 
@@ -178,7 +165,7 @@ def compute_train_test_metrics(
         dict: Metrics results containing the following data
 
             - "metrics": the computed metrics
-            - "persisted_parsings": the list of parsings
+            - "parsing_errors": the list of parsing errors
             - "confusion_matrix": the computed confusion matrix
             - "average_metrics": the metrics averaged over all intents
     """
@@ -195,6 +182,7 @@ def compute_train_test_metrics(
     intent_list.update(test_dataset["intents"])
     intent_list = sorted(intent_list)
 
+    logger.info("Training engine...")
     engine = engine_class()
     engine.fit(train_dataset)
     test_utterances = [
@@ -202,7 +190,9 @@ def compute_train_test_metrics(
         for intent_name, intent_data in iteritems(test_dataset[INTENTS])
         for utterance in intent_data[UTTERANCES]
     ]
-    metrics, parsings, confusion_matrix = compute_engine_metrics(
+
+    logger.info("Computing metrics...")
+    metrics, errors, confusion_matrix = compute_engine_metrics(
         engine, test_utterances, intent_list, include_slot_metrics,
         slot_matching_lambda, persist_exact_parsings)
     metrics = compute_precision_recall_f1(metrics)
@@ -215,5 +205,5 @@ def compute_train_test_metrics(
         CONFUSION_MATRIX: confusion_matrix,
         AVERAGE_METRICS: average_metrics,
         METRICS: metrics,
-        PARSINGS: parsings,
+        PARSING_ERRORS: errors,
     }

@@ -1,5 +1,6 @@
 from __future__ import absolute_import, division, unicode_literals
 
+import logging
 from copy import deepcopy
 
 import numpy as np
@@ -16,6 +17,8 @@ from snips_nlu_metrics.utils.dataset_utils import (
     update_entities_with_utterances)
 from snips_nlu_metrics.utils.exception import NotEnoughDataError
 
+logger = logging.getLogger(__name__)
+
 INITIAL_METRICS = {
     TRUE_POSITIVE: 0,
     FALSE_POSITIVE: 0,
@@ -27,15 +30,15 @@ def create_shuffle_stratified_splits(dataset, n_splits, train_size_ratio=1.0,
                                      drop_entities=False, seed=None,
                                      out_of_domain_utterances=None):
     if train_size_ratio > 1.0 or train_size_ratio < 0:
-        raise ValueError("Invalid value for train size ratio: %s"
-                         % train_size_ratio)
+        error_msg = "Invalid value for train size ratio: %s" % train_size_ratio
+        logger.exception(error_msg)
+        raise ValueError(error_msg)
 
     nb_utterances = {intent: len(data[UTTERANCES])
                      for intent, data in iteritems(dataset[INTENTS])}
     total_utterances = sum(itervalues(nb_utterances))
     if total_utterances < n_splits:
-        raise NotEnoughDataError("Number of utterances is too low (%s)"
-                                 % total_utterances)
+        not_enough_data(dataset, n_splits, train_size_ratio, nb_utterances)
     if drop_entities:
         dataset = deepcopy(dataset)
         for entity, data in iteritems(dataset[ENTITIES]):
@@ -62,7 +65,7 @@ def create_shuffle_stratified_splits(dataset, n_splits, train_size_ratio=1.0,
             test_utterances = utterances[test_index].tolist()
 
             if len(train_utterances) == 0:
-                not_enough_data(n_splits, train_size_ratio)
+                not_enough_data(dataset, n_splits, train_size_ratio)
             train_dataset = deepcopy(dataset)
             train_dataset[INTENTS] = dict()
             for intent_name, utterance in train_utterances:
@@ -72,7 +75,7 @@ def create_shuffle_stratified_splits(dataset, n_splits, train_size_ratio=1.0,
                     deepcopy(utterance))
             splits.append((train_dataset, test_utterances))
     except ValueError:
-        not_enough_data(n_splits, train_size_ratio)
+        not_enough_data(dataset, n_splits, train_size_ratio)
 
     if out_of_domain_utterances is not None:
         additional_test_utterances = [
@@ -85,11 +88,19 @@ def create_shuffle_stratified_splits(dataset, n_splits, train_size_ratio=1.0,
     return splits
 
 
-def not_enough_data(n_splits, train_size_ratio):
-    raise NotEnoughDataError("Not enough data given the other "
-                             "parameters "
-                             "(nb_folds=%s, train_size_ratio=%s)"
-                             % (n_splits, train_size_ratio))
+def not_enough_data(dataset, n_splits, train_size_ratio,
+                    nb_utterances=None):
+    if nb_utterances is None:
+        nb_utterances = {intent: len(data[UTTERANCES])
+                         for intent, data in iteritems(dataset[INTENTS])}
+    total_utterances = sum(itervalues(nb_utterances))
+    error_msg = "Not enough data: total_utterances={t}, nb_folds={f}, " \
+                "train_size_ratio={r}.".format(t=total_utterances, f=n_splits,
+                                               r=train_size_ratio)
+    error_msg += " Intents details: "
+    error_msg += ", ".join("%s -> %d utterances" % (intent, nb)
+                           for intent, nb in iteritems(nb_utterances))
+    raise NotEnoughDataError(error_msg)
 
 
 def compute_split_metrics(engine_class, split, intent_list,
@@ -396,10 +407,6 @@ def format_expected_output(intent_name, utterance, include_slots):
             if ENTITY in chunk
         ]
     return expected_output
-
-
-def is_builtin_entity(entity_name):
-    return entity_name.startswith("snips/")
 
 
 def exact_match(lhs_slot, rhs_slot):
