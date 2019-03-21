@@ -1,16 +1,28 @@
 import io
 import json
+import logging
 import os
+import sys
 import unittest
 
 from snips_nlu_metrics.metrics import (compute_cross_val_metrics,
                                        compute_train_test_metrics)
-from snips_nlu_metrics.tests.mock_engine import MockEngine
-from snips_nlu_metrics.utils.constants import METRICS, PARSING_ERRORS, \
-    CONFUSION_MATRIX, AVERAGE_METRICS
+from snips_nlu_metrics.tests.mock_engine import MockEngine, MockEngineSegfault
+from snips_nlu_metrics.utils.constants import (
+    METRICS, PARSING_ERRORS, CONFUSION_MATRIX, AVERAGE_METRICS)
 
 
 class TestMetrics(unittest.TestCase):
+    def setUp(self):
+        logger = logging.getLogger("snips_nlu_metrics")
+        formatter = logging.Formatter(
+            '%(asctime)s - %(levelname)s - %(message)s')
+        handler = logging.StreamHandler(sys.stdout)
+        handler.setLevel(logging.DEBUG)
+        handler.setFormatter(formatter)
+        logger.addHandler(handler)
+        logger.setLevel(logging.DEBUG)
+
     def test_compute_cross_val_metrics(self):
         # Given
         dataset_path = os.path.join(os.path.dirname(os.path.abspath(__file__)),
@@ -35,6 +47,7 @@ class TestMetrics(unittest.TestCase):
                     "recall": 0.0,
                     "f1": 0.0
                 },
+                "exact_parsings": 0,
                 "slots": {},
                 "intent_utterances": 0
             },
@@ -47,6 +60,7 @@ class TestMetrics(unittest.TestCase):
                     "recall": 0.0,
                     "f1": 0.0
                 },
+                "exact_parsings": 0,
                 "slots": {
                     "number_of_cups": {
                         "true_positive": 0,
@@ -68,6 +82,7 @@ class TestMetrics(unittest.TestCase):
                     "recall": 0.0,
                     "f1": 0.0
                 },
+                "exact_parsings": 0,
                 "slots": {
                     "number_of_cups": {
                         "true_positive": 0,
@@ -92,7 +107,81 @@ class TestMetrics(unittest.TestCase):
 
         self.assertDictEqual(expected_metrics, res["metrics"])
 
-        # Testing parallel CV with various number of workers
+    def test_compute_cross_val_metrics_with_multiple_workers(self):
+        # Given
+        dataset_path = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                                    "resources", "beverage_dataset.json")
+        with io.open(dataset_path, encoding="utf8") as f:
+            dataset = json.load(f)
+
+        # When/Then
+        expected_metrics = {
+            "null": {
+                "intent": {
+                    "true_positive": 0,
+                    "false_positive": 11,
+                    "false_negative": 0,
+                    "precision": 0.0,
+                    "recall": 0.0,
+                    "f1": 0.0
+                },
+                "exact_parsings": 0,
+                "slots": {},
+                "intent_utterances": 0
+            },
+            "MakeCoffee": {
+                "intent": {
+                    "true_positive": 0,
+                    "false_positive": 0,
+                    "false_negative": 7,
+                    "precision": 0.0,
+                    "recall": 0.0,
+                    "f1": 0.0
+                },
+                "exact_parsings": 0,
+                "slots": {
+                    "number_of_cups": {
+                        "true_positive": 0,
+                        "false_positive": 0,
+                        "false_negative": 0,
+                        "precision": 0.0,
+                        "recall": 0.0,
+                        "f1": 0.0
+                    }
+                },
+                "intent_utterances": 7
+            },
+            "MakeTea": {
+                "intent": {
+                    "true_positive": 0,
+                    "false_positive": 0,
+                    "false_negative": 4,
+                    "precision": 0.0,
+                    "recall": 0.0,
+                    "f1": 0.0
+                },
+                "exact_parsings": 0,
+                "slots": {
+                    "number_of_cups": {
+                        "true_positive": 0,
+                        "false_positive": 0,
+                        "false_negative": 0,
+                        "precision": 0.0,
+                        "recall": 0.0,
+                        "f1": 0.0
+                    },
+                    "beverage_temperature": {
+                        "true_positive": 0,
+                        "false_positive": 0,
+                        "false_negative": 0,
+                        "precision": 0.0,
+                        "recall": 0.0,
+                        "f1": 0.0
+                    }
+                },
+                "intent_utterances": 4
+            }
+        }
         try:
             res = compute_cross_val_metrics(
                 dataset=dataset, engine_class=MockEngine, nb_folds=2,
@@ -101,13 +190,18 @@ class TestMetrics(unittest.TestCase):
             self.fail(e.args[0])
         self.assertDictEqual(expected_metrics, res["metrics"])
 
-        try:
-            res = compute_cross_val_metrics(
-                dataset=dataset, engine_class=MockEngine, nb_folds=2,
-                num_workers=2)
-        except Exception as e:
-            self.fail(e.args[0])
-        self.assertDictEqual(expected_metrics, res["metrics"])
+    def test_should_raise_when_non_zero_exit(self):
+        # Given
+        dataset_path = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                                    "resources", "beverage_dataset.json")
+        with io.open(dataset_path, encoding="utf8") as f:
+            dataset = json.load(f)
+
+        # When/Then
+        with self.assertRaises(SystemExit):
+            compute_cross_val_metrics(
+                dataset=dataset, engine_class=MockEngineSegfault, nb_folds=4,
+                num_workers=4)
 
     def test_compute_cross_val_metrics_without_slot_metrics(self):
         # Given
@@ -134,7 +228,8 @@ class TestMetrics(unittest.TestCase):
                     "recall": 0.0,
                     "f1": 0.0
                 },
-                "intent_utterances": 0
+                "intent_utterances": 0,
+                "exact_parsings": 0
             },
             "MakeCoffee": {
                 "intent": {
@@ -145,7 +240,8 @@ class TestMetrics(unittest.TestCase):
                     "recall": 0.0,
                     "f1": 0.0
                 },
-                "intent_utterances": 7
+                "intent_utterances": 7,
+                "exact_parsings": 0
             },
             "MakeTea": {
                 "intent": {
@@ -156,7 +252,8 @@ class TestMetrics(unittest.TestCase):
                     "recall": 0.0,
                     "f1": 0.0
                 },
-                "intent_utterances": 4
+                "intent_utterances": 4,
+                "exact_parsings": 0
             }
         }
 
@@ -215,7 +312,8 @@ class TestMetrics(unittest.TestCase):
                         "f1": 0.0
                     }
                 },
-                "intent_utterances": 7
+                "intent_utterances": 7,
+                "exact_parsings": 0,
             },
             "null": {
                 "intent": {
@@ -226,7 +324,8 @@ class TestMetrics(unittest.TestCase):
                     "recall": 0.0,
                     "f1": 0.0},
                 "slots": {},
-                "intent_utterances": 0
+                "intent_utterances": 0,
+                "exact_parsings": 0,
             }, "MakeTea": {
                 "intent": {
                     "true_positive": 0,
@@ -254,7 +353,8 @@ class TestMetrics(unittest.TestCase):
                         "f1": 0.0
                     }
                 },
-                "intent_utterances": 4
+                "intent_utterances": 4,
+                "exact_parsings": 0,
             }
         }
 
@@ -285,7 +385,8 @@ class TestMetrics(unittest.TestCase):
                     "recall": 0.0,
                     "f1": 0.0
                 },
-                "intent_utterances": 7
+                "intent_utterances": 7,
+                "exact_parsings": 0,
             },
             "null": {
                 "intent": {
@@ -295,7 +396,8 @@ class TestMetrics(unittest.TestCase):
                     "precision": 0.0,
                     "recall": 0.0,
                     "f1": 0.0},
-                "intent_utterances": 0
+                "intent_utterances": 0,
+                "exact_parsings": 0,
             }, "MakeTea": {
                 "intent": {
                     "true_positive": 0,
@@ -305,7 +407,8 @@ class TestMetrics(unittest.TestCase):
                     "recall": 0.0,
                     "f1": 0.0
                 },
-                "intent_utterances": 4
+                "intent_utterances": 4,
+                "exact_parsings": 0,
             }
         }
 

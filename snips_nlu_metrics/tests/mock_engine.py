@@ -23,3 +23,15 @@ class MockEngine(Engine):
 
     def parse(self, text):
         return dummy_parsing_result(text)
+
+
+class MockEngineSegfault(Engine):
+    def __init__(self):
+        self.fitted = False
+
+    def fit(self, dataset):
+        self.fitted = True
+
+    def parse(self, text):
+        # Simulate a segmentation fault
+        exit(139)
