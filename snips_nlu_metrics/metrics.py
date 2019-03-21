@@ -2,6 +2,7 @@ from __future__ import division, print_function, unicode_literals
 
 import io
 import json
+import logging
 from builtins import map
 
 from future.utils import iteritems
@@ -16,6 +17,8 @@ from snips_nlu_metrics.utils.metrics_utils import (
     aggregate_matrices, aggregate_metrics, compute_average_metrics,
     compute_engine_metrics, compute_precision_recall_f1, compute_split_metrics,
     create_shuffle_stratified_splits)
+
+logger = logging.getLogger(__name__)
 
 
 def compute_cross_val_metrics(
@@ -71,7 +74,8 @@ def compute_cross_val_metrics(
             dataset, nb_folds, train_size_ratio, drop_entities,
             seed, out_of_domain_utterances)
     except NotEnoughDataError as e:
-        print("Skipping metrics computation because of: %s" % e.message)
+        logger.warning("Skipping metrics computation because of: %s"
+                       % e.message)
         return {
             AVERAGE_METRICS: None,
             CONFUSION_MATRIX: None,
@@ -86,6 +90,7 @@ def compute_cross_val_metrics(
     total_splits = len(splits)
 
     def compute_metrics(split_):
+        logger.info("Computing metrics for dataset split ...")
         return compute_split_metrics(
             engine_class, split_, intent_list, include_slot_metrics,
             slot_matching_lambda)
@@ -104,6 +109,8 @@ def compute_cross_val_metrics(
         global_confusion_matrix = aggregate_matrices(
             global_confusion_matrix, confusion_matrix)
         global_errors += errors
+        logger.info("Done computing %d/%d splits"
+                    % (split_index + 1, total_splits))
 
         if progression_handler is not None:
             progression_handler(
@@ -170,6 +177,7 @@ def compute_train_test_metrics(
     intent_list.update(test_dataset["intents"])
     intent_list = sorted(intent_list)
 
+    logger.info("Training engine...")
     engine = engine_class()
     engine.fit(train_dataset)
     test_utterances = [
@@ -177,6 +185,8 @@ def compute_train_test_metrics(
         for intent_name, intent_data in iteritems(test_dataset[INTENTS])
         for utterance in intent_data[UTTERANCES]
     ]
+
+    logger.info("Computing metrics...")
     metrics, errors, confusion_matrix = compute_engine_metrics(
         engine, test_utterances, intent_list, include_slot_metrics,
         slot_matching_lambda)

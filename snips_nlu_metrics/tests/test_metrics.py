@@ -1,16 +1,28 @@
 import io
 import json
+import logging
 import os
+import sys
 import unittest
 
 from snips_nlu_metrics.metrics import (compute_cross_val_metrics,
                                        compute_train_test_metrics)
 from snips_nlu_metrics.tests.mock_engine import MockEngine
-from snips_nlu_metrics.utils.constants import METRICS, PARSING_ERRORS, \
-    CONFUSION_MATRIX, AVERAGE_METRICS
+from snips_nlu_metrics.utils.constants import (
+    METRICS, PARSING_ERRORS, CONFUSION_MATRIX, AVERAGE_METRICS)
 
 
 class TestMetrics(unittest.TestCase):
+    def setUp(self):
+        logger = logging.getLogger("snips_nlu_metrics")
+        formatter = logging.Formatter(
+            '%(asctime)s - %(levelname)s - %(message)s')
+        handler = logging.StreamHandler(sys.stdout)
+        handler.setLevel(logging.DEBUG)
+        handler.setFormatter(formatter)
+        logger.addHandler(handler)
+        logger.setLevel(logging.DEBUG)
+
     def test_compute_cross_val_metrics(self):
         # Given
         dataset_path = os.path.join(os.path.dirname(os.path.abspath(__file__)),
