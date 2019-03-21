@@ -5,8 +5,8 @@ import json
 from builtins import map
 
 from future.utils import iteritems
+from joblib import Parallel, delayed
 from past.builtins import basestring
-from pathos.multiprocessing import Pool
 
 from snips_nlu_metrics.utils.constants import (
     AVERAGE_METRICS, CONFUSION_MATRIX, INTENTS, INTENT_UTTERANCES, METRICS,
@@ -85,21 +85,20 @@ def compute_cross_val_metrics(
     global_errors = []
     total_splits = len(splits)
 
-    if num_workers > 1:
-        effective_num_workers = min(num_workers, len(splits))
-        pool = Pool(effective_num_workers)
-        runner = pool.imap_unordered
+    def compute_metrics(split_):
+        return compute_split_metrics(
+            engine_class, split_, intent_list, include_slot_metrics,
+            slot_matching_lambda)
+
+    effective_num_workers = min(num_workers, len(splits))
+    if effective_num_workers > 1:
+        parallel = Parallel(n_jobs=effective_num_workers)
+        results = parallel(delayed(compute_metrics)(split) for split in splits)
     else:
-        runner = map
+        results = map(compute_metrics, splits)
 
-    results = runner(
-        lambda split:
-        compute_split_metrics(engine_class, split, intent_list,
-                              include_slot_metrics, slot_matching_lambda),
-        splits)
-
-    for split_index, (split_metrics, errors, confusion_matrix) in \
-            enumerate(results):
+    for result in enumerate(results):
+        split_index, (split_metrics, errors, confusion_matrix) = result
         global_metrics = aggregate_metrics(
             global_metrics, split_metrics, include_slot_metrics)
         global_confusion_matrix = aggregate_matrices(
