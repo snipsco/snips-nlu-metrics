@@ -77,10 +77,11 @@ class TestMetricsUtils(unittest.TestCase):
             return lhs[TEXT] == rhs["rawValue"]
 
         # When
-        metrics, errors, confusion_matrix = compute_engine_metrics(
-            engine=engine, test_utterances=utterances,
-            intent_list=["intent1", "intent2"], include_slot_metrics=True,
-            slot_matching_lambda=slots_match)
+        metrics, errors, exact_parsings, confusion_matrix = \
+            compute_engine_metrics(
+                engine=engine, test_utterances=utterances,
+                intent_list=["intent1", "intent2"], include_slot_metrics=True,
+                slot_matching_lambda=slots_match)
 
         # Then
         expected_metrics = {
@@ -158,7 +159,6 @@ class TestMetricsUtils(unittest.TestCase):
                         "probability": 1.0
                     }
                 },
-                "is_exact": False
             },
             {
                 "expected_output": {
@@ -197,7 +197,6 @@ class TestMetricsUtils(unittest.TestCase):
                         "probability": 1.0
                     }
                 },
-                "is_exact": False
             },
             {
                 "expected_output": {
@@ -236,7 +235,6 @@ class TestMetricsUtils(unittest.TestCase):
                         "probability": 1.0
                     }
                 },
-                "is_exact": False
             }
         ]
 
@@ -256,6 +254,7 @@ class TestMetricsUtils(unittest.TestCase):
         self.assertDictEqual(expected_metrics, metrics)
         self.assertListEqual(expected_errors, errors)
         self.assertDictEqual(expected_confusion_matrix, confusion_matrix)
+        self.assertIsNone(exact_parsings)
 
     def test_should_compute_utterance_metrics_when_wrong_intent(self):
         # Given
@@ -650,7 +649,7 @@ class TestMetricsUtils(unittest.TestCase):
                     "precision": 9. / (7. + 9.),
                     "recall": 9. / (12. + 9.),
                     "f1": 2 * (9. / (7. + 9.)) * (9. / (12. + 9.)) / (
-                            9. / (7. + 9.) + 9. / (12. + 9.))
+                        9. / (7. + 9.) + 9. / (12. + 9.))
 
                 },
                 "slots":
@@ -662,7 +661,7 @@ class TestMetricsUtils(unittest.TestCase):
                             "precision": 5. / (5. + 3.),
                             "recall": 5. / (5. + 4.),
                             "f1": 2 * (5. / (5. + 3.)) * (5. / (5. + 4.)) / (
-                                    5. / (5. + 3.) + 5. / (5. + 4.))
+                                5. / (5. + 3.) + 5. / (5. + 4.))
                         },
                     }
             },
@@ -674,7 +673,7 @@ class TestMetricsUtils(unittest.TestCase):
                     "precision": 7. / (7. + 7.),
                     "recall": 7. / (7. + 11.),
                     "f1": 2 * (7. / (7. + 7.)) * (7. / (7. + 11.)) / (
-                            7. / (7. + 7.) + 7. / (7. + 11.))
+                        7. / (7. + 7.) + 7. / (7. + 11.))
                 },
                 "slots": {
                     "slot2": {
@@ -684,7 +683,7 @@ class TestMetricsUtils(unittest.TestCase):
                         "precision": 2. / (2. + 4.),
                         "recall": 2. / (2. + 2.),
                         "f1": 2 * (2. / (2. + 4.)) * (2. / (2. + 2.)) / (
-                                2. / (2. + 4.) + 2. / (2. + 2.))
+                            2. / (2. + 4.) + 2. / (2. + 2.))
                     },
                 }
             },
