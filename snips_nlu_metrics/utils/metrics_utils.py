@@ -387,9 +387,5 @@ def format_expected_output(intent_name, utterance, include_slots):
     return expected_output
 
 
-def is_builtin_entity(entity_name):
-    return entity_name.startswith("snips/")
-
-
 def exact_match(lhs_slot, rhs_slot):
     return lhs_slot[TEXT] == rhs_slot["rawValue"]
