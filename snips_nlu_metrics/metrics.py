@@ -11,7 +11,7 @@ from past.builtins import basestring
 
 from snips_nlu_metrics.utils.constants import (
     AVERAGE_METRICS, CONFUSION_MATRIX, INTENTS, INTENT_UTTERANCES, METRICS,
-    PARSING_ERRORS, UTTERANCES)
+    PARSING_ERRORS, EXACT_PARSINGS, UTTERANCES)
 from snips_nlu_metrics.utils.exception import NotEnoughDataError
 from snips_nlu_metrics.utils.metrics_utils import (
     aggregate_matrices, aggregate_metrics, compute_average_metrics,
@@ -26,7 +26,7 @@ def compute_cross_val_metrics(
         drop_entities=False, include_slot_metrics=True,
         slot_matching_lambda=None, progression_handler=None, num_workers=1,
         seed=None, out_of_domain_utterances=None,
-        persist_exact_parsings=False):
+        include_exact_parsings=False):
     """Compute end-to-end metrics on the dataset using cross validation
 
     Args:
@@ -56,7 +56,7 @@ def compute_cross_val_metrics(
         out_of_domain_utterances (list, optional): If defined, list of 
             out-of-domain utterances to be added to the pool of test utterances 
             in each split
-        persist_exact_parsings (bool, optional): If true, include exact 
+        include_exact_parsings (bool, optional): If true, include exact 
             parsings in persisted parsings
 
     Returns:
@@ -64,6 +64,7 @@ def compute_cross_val_metrics(
     
             - "metrics": the computed metrics
             - "parsing_errors": the list of parsing errors
+            - "exact_parsings": the list of exact parsings
             - "confusion_matrix": the computed confusion matrix
             - "average_metrics": the metrics averaged over all intents    
     """
@@ -90,13 +91,16 @@ def compute_cross_val_metrics(
     global_metrics = dict()
     global_confusion_matrix = None
     global_errors = []
+    global_exact_parsings = None
+    if include_exact_parsings:
+        global_exact_parsings = []
     total_splits = len(splits)
 
     def compute_metrics(split_):
         logger.info("Computing metrics for dataset split ...")
         return compute_split_metrics(
             engine_class, split_, intent_list, include_slot_metrics,
-            slot_matching_lambda)
+            slot_matching_lambda, include_exact_parsings)
 
     effective_num_workers = min(num_workers, len(splits))
     if effective_num_workers > 1:
@@ -106,12 +110,15 @@ def compute_cross_val_metrics(
         results = map(compute_metrics, splits)
 
     for result in enumerate(results):
-        split_index, (split_metrics, errors, confusion_matrix) = result
+        split_index, (split_metrics, errors, exact_parsings, confusion_matrix)\
+            = result
         global_metrics = aggregate_metrics(
             global_metrics, split_metrics, include_slot_metrics)
         global_confusion_matrix = aggregate_matrices(
             global_confusion_matrix, confusion_matrix)
         global_errors += errors
+        if include_exact_parsings:
+            global_exact_parsings += exact_parsings
         logger.info("Done computing %d/%d splits"
                     % (split_index + 1, total_splits))
 
@@ -135,12 +142,13 @@ def compute_cross_val_metrics(
         AVERAGE_METRICS: average_metrics,
         METRICS: global_metrics,
         PARSING_ERRORS: global_errors,
+        EXACT_PARSINGS: global_exact_parsings
     }
 
 
 def compute_train_test_metrics(
         train_dataset, test_dataset, engine_class, include_slot_metrics=True,
-        slot_matching_lambda=None, persist_exact_parsings=False):
+        slot_matching_lambda=None, include_exact_parsings=False):
     """Compute end-to-end metrics on `test_dataset` after having trained on
     `train_dataset`
 
@@ -158,7 +166,7 @@ def compute_train_test_metrics(
             metrics, otherwise exact match will be used.
             `expected_slot` corresponds to the slot as defined in the dataset,
             and `actual_slot` corresponds to the slot as returned by the NLU
-        persist_exact_parsings (bool, optional): If true, include exact 
+        include_exact_parsings (bool, optional): If true, include exact 
             parsings in persisted parsings
 
     Returns
@@ -166,6 +174,7 @@ def compute_train_test_metrics(
 
             - "metrics": the computed metrics
             - "parsing_errors": the list of parsing errors
+            - "exact_parsings": the list of exact parsings
             - "confusion_matrix": the computed confusion matrix
             - "average_metrics": the metrics averaged over all intents
     """
@@ -192,9 +201,9 @@ def compute_train_test_metrics(
     ]
 
     logger.info("Computing metrics...")
-    metrics, errors, confusion_matrix = compute_engine_metrics(
+    metrics, errors, exact_parsings, confusion_matrix = compute_engine_metrics(
         engine, test_utterances, intent_list, include_slot_metrics,
-        slot_matching_lambda, persist_exact_parsings)
+        slot_matching_lambda, include_exact_parsings)
     metrics = compute_precision_recall_f1(metrics)
     average_metrics = compute_average_metrics(metrics)
     nb_utterances = {intent: len(data[UTTERANCES])
@@ -206,4 +215,5 @@ def compute_train_test_metrics(
         AVERAGE_METRICS: average_metrics,
         METRICS: metrics,
         PARSING_ERRORS: errors,
+        EXACT_PARSINGS: exact_parsings
     }
