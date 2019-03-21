@@ -21,6 +21,7 @@ from snips_nlu_metrics.utils.metrics_utils import (
 logger = logging.getLogger(__name__)
 
 
+# Ensure back-compatibility
 def compute_cross_val_metrics(*args, **kwargs):
     if 'list_runtime_params' in kwargs:
         raise RuntimeError(
@@ -166,9 +167,19 @@ def compute_cross_val_metrics_grid_runtime(
     } for runtime_params_idx in range(len(list_runtime_params))]
 
 
-def compute_train_test_metrics(
+# Ensure back-compatibilty
+def compute_train_test_metrics(*args, **kwargs):
+    if 'list_runtime_params' in kwargs:
+        raise RuntimeError(
+            "list_runtime_params must not be set when using "
+            "this version of compute_cross_val_metrics.")
+    return compute_train_test_metrics_grid_runtime(*args, **kwargs)[0]
+
+
+def compute_train_test_metrics_grid_runtime(
         train_dataset, test_dataset, engine_class, include_slot_metrics=True,
-        slot_matching_lambda=None, include_exact_parsings=False):
+        slot_matching_lambda=None, include_exact_parsings=False,
+        list_runtime_params=None):
     """Compute end-to-end metrics on `test_dataset` after having trained on
     `train_dataset`
 
@@ -199,6 +210,10 @@ def compute_train_test_metrics(
             - "average_metrics": the metrics averaged over all intents
     """
 
+    if list_runtime_params is None:
+        # Only default runtime parameters
+        list_runtime_params = [None]
+
     if isinstance(train_dataset, basestring):
         with io.open(train_dataset, encoding="utf8") as f:
             train_dataset = json.load(f)
@@ -219,21 +234,25 @@ def compute_train_test_metrics(
         for intent_name, intent_data in iteritems(test_dataset[INTENTS])
         for utterance in intent_data[UTTERANCES]
     ]
-
+    results = []
     logger.info("Computing metrics...")
-    metrics, errors, exact_parsings, confusion_matrix = compute_engine_metrics(
-        engine, test_utterances, intent_list, include_slot_metrics,
-        slot_matching_lambda, include_exact_parsings)
-    metrics = compute_precision_recall_f1(metrics)
-    average_metrics = compute_average_metrics(metrics)
-    nb_utterances = {intent: len(data[UTTERANCES])
-                     for intent, data in iteritems(train_dataset[INTENTS])}
-    for intent, intent_metrics in iteritems(metrics):
-        intent_metrics[INTENT_UTTERANCES] = nb_utterances.get(intent, 0)
-    return {
-        CONFUSION_MATRIX: confusion_matrix,
-        AVERAGE_METRICS: average_metrics,
-        METRICS: metrics,
-        PARSING_ERRORS: errors,
-        EXACT_PARSINGS: exact_parsings
-    }
+    for runtime_params in list_runtime_params:
+        metrics, errors, exact_parsings, confusion_matrix = compute_engine_metrics(
+            engine, test_utterances, intent_list, include_slot_metrics,
+            slot_matching_lambda, include_exact_parsings,
+            runtime_params=runtime_params)
+        metrics = compute_precision_recall_f1(metrics)
+        average_metrics = compute_average_metrics(metrics)
+        nb_utterances = {intent: len(data[UTTERANCES])
+                         for intent, data in iteritems(train_dataset[INTENTS])}
+        for intent, intent_metrics in iteritems(metrics):
+            intent_metrics[INTENT_UTTERANCES] = nb_utterances.get(intent, 0)
+        results.append({
+            CONFUSION_MATRIX: confusion_matrix,
+            AVERAGE_METRICS: average_metrics,
+            METRICS: metrics,
+            PARSING_ERRORS: errors,
+            EXACT_PARSINGS: exact_parsings
+        })
+    return results
+
