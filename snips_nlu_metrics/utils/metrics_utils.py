@@ -1,5 +1,6 @@
 from __future__ import absolute_import, division, unicode_literals
 
+import inspect
 import logging
 from copy import deepcopy
 
@@ -26,9 +27,9 @@ INITIAL_METRICS = {
 }
 
 
-def create_shuffle_stratified_splits(dataset, n_splits, train_size_ratio=1.0,
-                                     drop_entities=False, seed=None,
-                                     out_of_domain_utterances=None):
+def create_shuffle_stratified_splits(
+        dataset, n_splits, train_size_ratio=1.0, drop_entities=False,
+        seed=None, out_of_domain_utterances=None, intents_filter=None):
     if train_size_ratio > 1.0 or train_size_ratio < 0:
         error_msg = "Invalid value for train size ratio: %s" % train_size_ratio
         logger.exception(error_msg)
@@ -77,6 +78,15 @@ def create_shuffle_stratified_splits(dataset, n_splits, train_size_ratio=1.0,
     except ValueError:
         not_enough_data(dataset, n_splits, train_size_ratio)
 
+    if intents_filter is not None:
+        filtered_splits = []
+        for train_dataset, test_utterances in splits:
+            test_utterances = [(intent_name, utterance)
+                               for intent_name, utterance in test_utterances
+                               if intent_name in intents_filter]
+            filtered_splits.append((train_dataset, test_utterances))
+        splits = filtered_splits
+
     if out_of_domain_utterances is not None:
         additional_test_utterances = [
             [NONE_INTENT_NAME, {DATA: [{TEXT: utterance}]}]
@@ -104,7 +114,8 @@ def not_enough_data(dataset, n_splits, train_size_ratio,
 
 
 def compute_split_metrics(engine_class, split, intent_list,
-                          include_slot_metrics, slot_matching_lambda):
+                          include_slot_metrics, slot_matching_lambda,
+                          intents_filter):
     """Fit and run engine on a split specified by train_dataset and
         test_utterances"""
     train_dataset, test_utterances = split
@@ -112,11 +123,12 @@ def compute_split_metrics(engine_class, split, intent_list,
     engine.fit(train_dataset)
     return compute_engine_metrics(
         engine, test_utterances, intent_list, include_slot_metrics,
-        slot_matching_lambda)
+        slot_matching_lambda, intents_filter)
 
 
 def compute_engine_metrics(engine, test_utterances, intent_list,
-                           include_slot_metrics, slot_matching_lambda=None):
+                           include_slot_metrics, slot_matching_lambda=None,
+                           intents_filter=None):
     if slot_matching_lambda is None:
         slot_matching_lambda = exact_match
     metrics = dict()
@@ -129,12 +141,18 @@ def compute_engine_metrics(engine, test_utterances, intent_list,
     intents_idx = {
         intent_name: idx for idx, intent_name in enumerate(intent_list)
     }
+    parse_args = inspect.getargspec(engine.parse).args
+    has_filter_param = "intents_filter" in parse_args
+
     errors = []
     for actual_intent, utterance in test_utterances:
         actual_slots = [chunk for chunk in utterance[DATA] if
                         SLOT_NAME in chunk]
         input_string = input_string_from_chunks(utterance[DATA])
-        parsing = engine.parse(input_string)
+        if has_filter_param:
+            parsing = engine.parse(input_string, intents_filter=intents_filter)
+        else:
+            parsing = engine.parse(input_string)
 
         if parsing["intent"] is not None:
             predicted_intent = parsing["intent"]["intentName"]

@@ -1,6 +1,10 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+## [Unreleased]
+### Added
+- Add optional parameter `intents_filter` to metrics APIs [#115](https://github.com/snipsco/snips-nlu-metrics/pull/115)
+
 ## [0.14.2] - 2019-03-21
 ### Added
 - Number of exact parsings
