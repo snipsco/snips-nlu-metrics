@@ -1,3 +1,4 @@
+recursive-include samples *
 include snips_nlu_metrics/__version__
-include README.rst LICENSE
+include README.rst LICENSE CHANGELOG.md
 global-exclude __pycache__ *.py[cod]
