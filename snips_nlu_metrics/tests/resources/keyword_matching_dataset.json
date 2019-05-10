@@ -1,0 +1,95 @@
+{
+  "language": "en",
+  "intents": {
+    "intent1": {
+      "utterances": [
+        {
+          "data": [
+            {
+              "text": "intent1 utterance"
+            }
+          ]
+        },
+        {
+          "data": [
+            {
+              "text": "intent1 utterance"
+            }
+          ]
+        },
+        {
+          "data": [
+            {
+              "text": "intent1 utterance"
+            }
+          ]
+        },
+        {
+          "data": [
+            {
+              "text": "intent1 utterance"
+            }
+          ]
+        }
+      ]
+    },
+    "intent2": {
+      "utterances": [
+        {
+          "data": [
+            {
+              "text": "intent2 utterance"
+            }
+          ]
+        },
+        {
+          "data": [
+            {
+              "text": "intent2 utterance"
+            }
+          ]
+        },
+        {
+          "data": [
+            {
+              "text": "intent2 utterance"
+            }
+          ]
+        },
+        {
+          "data": [
+            {
+              "text": "intent2 intent1 ambiguous utterance"
+            }
+          ]
+        }
+      ]
+    },
+    "intent3": {
+      "utterances": [
+        {
+          "data": [
+            {
+              "text": "intent3 utterance"
+            }
+          ]
+        },
+        {
+          "data": [
+            {
+              "text": "intent3 utterance"
+            }
+          ]
+        },
+        {
+          "data": [
+            {
+              "text": "intent3 intent1 ambiguous utterance"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "entities": {}
+}

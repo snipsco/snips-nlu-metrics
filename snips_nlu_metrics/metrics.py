@@ -3,7 +3,6 @@ from __future__ import division, print_function, unicode_literals
 import io
 import json
 import logging
-from builtins import map
 
 from future.utils import iteritems
 from joblib import Parallel, delayed
@@ -25,20 +24,20 @@ def compute_cross_val_metrics(
         dataset, engine_class, nb_folds=5, train_size_ratio=1.0,
         drop_entities=False, include_slot_metrics=True,
         slot_matching_lambda=None, progression_handler=None, num_workers=1,
-        seed=None, out_of_domain_utterances=None):
+        seed=None, out_of_domain_utterances=None, intents_filter=None):
     """Compute end-to-end metrics on the dataset using cross validation
 
     Args:
-        dataset (dict or str): Dataset or path to dataset
-        engine_class: Python class to use for training and inference, this
+        dataset (dict or str): dataset or path to dataset
+        engine_class: python class to use for training and inference, this
             class must inherit from `Engine`
-        nb_folds (int, optional): Number of folds to use for cross validation
+        nb_folds (int, optional): number of folds to use for cross validation
             (default=5)
         train_size_ratio (float, optional): ratio of intent utterances to use
             for training (default=1.0)
-        drop_entities (bool, optional): Specify whether or not all entity
+        drop_entities (bool, optional): specify whether or not all entity
             values should be removed from training data (default=False)
-        include_slot_metrics (bool, optional): If false, the slots metrics and
+        include_slot_metrics (bool, optional): if false, the slots metrics and
             the slots parsing errors will not be reported (default=True)
         slot_matching_lambda (lambda, optional):
             lambda expected_slot, actual_slot -> bool,
@@ -52,9 +51,13 @@ def compute_cross_val_metrics(
         num_workers (int, optional): number of workers to use. Each worker
             is assigned a certain number of splits (default=1)
         seed (int, optional): seed for the split creation
-        out_of_domain_utterances (list, optional): If defined, list of 
-            out-of-domain utterances to be added to the pool of test utterances 
+        out_of_domain_utterances (list, optional): if defined, list of
+            out-of-domain utterances to be added to the pool of test utterances
             in each split
+        intents_filter (list of str, optional): if defined, at inference times
+            test utterances will be restricted to the ones belonging to this
+            filter. Moreover, if the parsing API allows it, the inference will
+            be made using this intents filter.
 
     Returns:
         dict: Metrics results containing the following data
@@ -72,7 +75,7 @@ def compute_cross_val_metrics(
     try:
         splits = create_shuffle_stratified_splits(
             dataset, nb_folds, train_size_ratio, drop_entities,
-            seed, out_of_domain_utterances)
+            seed, out_of_domain_utterances, intents_filter)
     except NotEnoughDataError as e:
         logger.warning("Skipping metrics computation because of: %s"
                        % e.message)
@@ -93,14 +96,14 @@ def compute_cross_val_metrics(
         logger.info("Computing metrics for dataset split ...")
         return compute_split_metrics(
             engine_class, split_, intent_list, include_slot_metrics,
-            slot_matching_lambda)
+            slot_matching_lambda, intents_filter)
 
     effective_num_workers = min(num_workers, len(splits))
     if effective_num_workers > 1:
         parallel = Parallel(n_jobs=effective_num_workers)
         results = parallel(delayed(compute_metrics)(split) for split in splits)
     else:
-        results = map(compute_metrics, splits)
+        results = [compute_metrics(s) for s in splits]
 
     for result in enumerate(results):
         split_index, (split_metrics, errors, confusion_matrix) = result
@@ -137,7 +140,7 @@ def compute_cross_val_metrics(
 
 def compute_train_test_metrics(
         train_dataset, test_dataset, engine_class, include_slot_metrics=True,
-        slot_matching_lambda=None):
+        slot_matching_lambda=None, intents_filter=None):
     """Compute end-to-end metrics on `test_dataset` after having trained on
     `train_dataset`
 
@@ -155,6 +158,10 @@ def compute_train_test_metrics(
             metrics, otherwise exact match will be used.
             `expected_slot` corresponds to the slot as defined in the dataset,
             and `actual_slot` corresponds to the slot as returned by the NLU
+        intents_filter (list of str, optional): if defined, at inference times
+            test utterances will be restricted to the ones belonging to this
+            filter. Moreover, if the parsing API allows it, the inference will
+            be made using this intents filter.
 
     Returns
         dict: Metrics results containing the following data
@@ -184,12 +191,13 @@ def compute_train_test_metrics(
         (intent_name, utterance)
         for intent_name, intent_data in iteritems(test_dataset[INTENTS])
         for utterance in intent_data[UTTERANCES]
+        if intents_filter is None or intent_name in intents_filter
     ]
 
     logger.info("Computing metrics...")
     metrics, errors, confusion_matrix = compute_engine_metrics(
         engine, test_utterances, intent_list, include_slot_metrics,
-        slot_matching_lambda)
+        slot_matching_lambda, intents_filter)
     metrics = compute_precision_recall_f1(metrics)
     average_metrics = compute_average_metrics(metrics)
     nb_utterances = {intent: len(data[UTTERANCES])

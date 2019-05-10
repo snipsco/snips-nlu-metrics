@@ -1,5 +1,4 @@
-from __future__ import division
-from __future__ import unicode_literals
+from __future__ import division, unicode_literals
 
 import unittest
 from builtins import object
@@ -80,7 +79,7 @@ class TestMetricsUtils(unittest.TestCase):
         metrics, errors, confusion_matrix = compute_engine_metrics(
             engine=engine, test_utterances=utterances,
             intent_list=["intent1", "intent2"], include_slot_metrics=True,
-            slot_matching_lambda=slots_match)
+            slot_matching_lambda=slots_match, intents_filter=None)
 
         # Then
         expected_metrics = {
@@ -254,9 +253,109 @@ class TestMetricsUtils(unittest.TestCase):
         self.assertListEqual(expected_errors, errors)
         self.assertDictEqual(expected_confusion_matrix, confusion_matrix)
 
+    def test_should_compute_engine_metrics_with_intents_filter(self):
+        # Given
+        def create_utterance(intent_name, text):
+            return intent_name, {"data": [{"text": text}]}
+
+        def create_parsing_output(intent_name, text):
+            return {
+                "text": text,
+                "intent": {
+                    "intentName": intent_name,
+                    "probability": 1.0
+                },
+                "slots": []
+            }
+
+        utterances = [
+            create_utterance("intent1", "first utterance intent1"),
+            create_utterance("intent1", "second utterance intent1"),
+            create_utterance("intent1", "third utterance intent1"),
+            create_utterance("intent1",
+                             "ambiguous utterance intent1 and intent3"),
+            create_utterance("intent2", "first utterance intent2"),
+            create_utterance("intent2", "second utterance intent2"),
+            create_utterance("intent2",
+                             "ambiguous utterance intent2 and intent3"),
+        ]
+
+        class EngineWithFilterAPI(object):
+            def parse(self, text, intents_filter=None):
+                intent = None
+                for intent_name in ["intent3", "intent1", "intent2"]:
+                    if intent_name in text:
+                        intent = intent_name
+                        break
+
+                if intents_filter is not None and intent not in intents_filter:
+                    intent = None
+                return create_parsing_output(intent, text)
+
+        class EngineWithFilterProp(object):
+            def __init__(self):
+                self.intents_filter = ["intent1", "intent2"]
+
+            def parse(self, text):
+                intent = None
+                for intent_name in ["intent3", "intent1", "intent2"]:
+                    if intent_name in text:
+                        intent = intent_name
+                        break
+
+                if self.intents_filter is not None and \
+                        intent not in self.intents_filter:
+                    intent = None
+                return create_parsing_output(intent, text)
+
+        engine_with_filter_api = EngineWithFilterAPI()
+        engine_with_filter_prop = EngineWithFilterProp()
+
+        # When
+        metrics1, _, _ = compute_engine_metrics(
+            engine=engine_with_filter_api, test_utterances=utterances,
+            intent_list=["intent1", "intent2", "intent3"],
+            include_slot_metrics=False,
+            intents_filter=["intent1", "intent2"])
+        metrics2, _, _ = compute_engine_metrics(
+            engine=engine_with_filter_prop, test_utterances=utterances,
+            intent_list=["intent1", "intent2", "intent3"],
+            include_slot_metrics=False,
+            intents_filter=["intent1", "intent2"])
+
+        # Then
+        expected_metrics = {
+            "intent1": {
+                "exact_parsings": 3,
+                "intent": {
+                    "false_positive": 0,
+                    "true_positive": 3,
+                    "false_negative": 1
+                }
+            },
+            "intent2": {
+                "exact_parsings": 2,
+                "intent": {
+                    "false_positive": 0,
+                    "true_positive": 2,
+                    "false_negative": 1,
+                }
+            },
+            "null": {
+                "exact_parsings": 0,
+                "intent": {
+                    "false_positive": 2,
+                    "true_positive": 0,
+                    "false_negative": 0,
+                }
+            }
+        }
+
+        self.assertDictEqual(expected_metrics, metrics1)
+        self.assertDictEqual(expected_metrics, metrics2)
+
     def test_should_compute_utterance_metrics_when_wrong_intent(self):
         # Given
-        text = "utterance of intent1"
         actual_intent = "intent1"
         actual_slots = []
         predicted_intent = "intent2"

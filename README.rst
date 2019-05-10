@@ -94,10 +94,8 @@ API as follows:
 
 .. code-block:: python
 
-    from snips_nlu import load_resources, SnipsNLUEngine
+    from snips_nlu import SnipsNLUEngine
     from snips_nlu_metrics import compute_train_test_metrics, compute_cross_val_metrics
-
-    load_resources("en")
 
     tt_metrics = compute_train_test_metrics(train_dataset="samples/train_dataset.json",
                                             test_dataset="samples/test_dataset.json",
