@@ -1,7 +1,7 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
-## [Unreleased]
+## [0.14.3] - 2019-05-10
 ### Added
 - Add optional parameter `intents_filter` to metrics APIs [#115](https://github.com/snipsco/snips-nlu-metrics/pull/115)
 
@@ -48,6 +48,7 @@ All notable changes to this project will be documented in this file.
 - Samples
 
 
+[0.14.3]: https://github.com/snipsco/snips-nlu-metrics/compare/0.14.2...0.14.3
 [0.14.2]: https://github.com/snipsco/snips-nlu-metrics/compare/0.14.1...0.14.2
 [0.14.1]: https://github.com/snipsco/snips-nlu-metrics/compare/0.14.0...0.14.1
 [0.14.0]: https://github.com/snipsco/snips-nlu-metrics/compare/0.13.0...0.14.0
