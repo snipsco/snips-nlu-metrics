@@ -21,7 +21,8 @@ install_requires = [
     "future",
     "numpy>=1.7,<2.0",
     "scipy>=1.0,<2.0",
-    "scikit-learn>=0.19,<0.20",
+    "scikit-learn>=0.21.0,<0.22; python_version>='3.5'",
+    "scikit-learn>=0.19,<0.21; python_version<'3.5'",
     "joblib>=0.13,<0.14"
 ]
 
