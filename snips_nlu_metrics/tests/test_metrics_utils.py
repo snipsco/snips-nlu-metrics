@@ -5,9 +5,11 @@ from builtins import object
 
 from snips_nlu_metrics.utils.constants import (TRUE_POSITIVE, FALSE_POSITIVE,
                                                FALSE_NEGATIVE, TEXT)
+from snips_nlu_metrics.utils.exception import NotEnoughDataError
 from snips_nlu_metrics.utils.metrics_utils import (
     aggregate_metrics, compute_utterance_metrics, compute_precision_recall_f1,
-    exact_match, contains_errors, compute_engine_metrics, aggregate_matrices)
+    exact_match, contains_errors, compute_engine_metrics, aggregate_matrices,
+    create_shuffle_stratified_splits)
 
 
 class TestMetricsUtils(unittest.TestCase):
@@ -974,3 +976,42 @@ class TestMetricsUtils(unittest.TestCase):
         }
 
         self.assertDictEqual(expected_confusion_matrix, acc_matrix)
+
+    def test_should_create_splits_when_enough_data(self):
+        # Given
+        dataset = {
+            "intents": {
+                "intents_1": {
+                    "utterances": 10 * [{"data": [{"text": "foobar"}]}]
+                },
+                "intents_2": {
+                    "utterances": 12 * [{"data": [{"text": "foobar"}]}]
+                }
+            },
+            "entities": dict(),
+            "language": "en",
+        }
+
+        # When / Then
+        create_shuffle_stratified_splits(dataset=dataset, n_splits=5,
+                                         train_size_ratio=0.5)
+
+    def test_should_not_create_splits_when_not_enough_data(self):
+        # Given
+        dataset = {
+            "intents": {
+                "intents_1": {
+                    "utterances": 10 * [{"data": [{"text": "foobar"}]}]
+                },
+                "intents_2": {
+                    "utterances": 12 * [{"data": [{"text": "foobar"}]}]
+                }
+            },
+            "entities": dict(),
+            "language": "en",
+        }
+
+        # When / Then
+        with self.assertRaises(NotEnoughDataError):
+            create_shuffle_stratified_splits(dataset=dataset, n_splits=6,
+                                             train_size_ratio=0.5)

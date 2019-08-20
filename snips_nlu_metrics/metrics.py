@@ -77,8 +77,7 @@ def compute_cross_val_metrics(
             dataset, nb_folds, train_size_ratio, drop_entities,
             seed, out_of_domain_utterances, intents_filter)
     except NotEnoughDataError as e:
-        logger.warning("Skipping metrics computation because of: %s"
-                       % e.message)
+        logger.warning("Not enough data, skipping metrics computation: %r", e)
         return {
             AVERAGE_METRICS: None,
             CONFUSION_MATRIX: None,

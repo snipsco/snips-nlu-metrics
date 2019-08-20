@@ -2,6 +2,7 @@ from __future__ import absolute_import, division, unicode_literals
 
 import inspect
 import logging
+import sys
 from copy import deepcopy
 
 import numpy as np
@@ -37,9 +38,10 @@ def create_shuffle_stratified_splits(
 
     nb_utterances = {intent: len(data[UTTERANCES])
                      for intent, data in iteritems(dataset[INTENTS])}
-    total_utterances = sum(itervalues(nb_utterances))
-    if total_utterances < n_splits:
-        not_enough_data(dataset, n_splits, train_size_ratio, nb_utterances)
+    if any((nb * train_size_ratio < n_splits
+            for nb in itervalues(nb_utterances))):
+        raise NotEnoughDataError(dataset, n_splits, train_size_ratio)
+
     if drop_entities:
         dataset = deepcopy(dataset)
         for entity, data in iteritems(dataset[ENTITIES]):
@@ -58,25 +60,19 @@ def create_shuffle_stratified_splits(
     sss = StratifiedKFold(n_splits=n_splits, shuffle=True,
                           random_state=random_state)
     splits = []
-    try:
-        for train_index, test_index in sss.split(X, intents):
-            train_utterances = utterances[train_index].tolist()
-            train_utterances = get_utterances_subset(train_utterances,
-                                                     train_size_ratio)
-            test_utterances = utterances[test_index].tolist()
-
-            if len(train_utterances) == 0:
-                not_enough_data(dataset, n_splits, train_size_ratio)
-            train_dataset = deepcopy(dataset)
-            train_dataset[INTENTS] = dict()
-            for intent_name, utterance in train_utterances:
-                if intent_name not in train_dataset[INTENTS]:
-                    train_dataset[INTENTS][intent_name] = {UTTERANCES: []}
-                train_dataset[INTENTS][intent_name][UTTERANCES].append(
-                    deepcopy(utterance))
-            splits.append((train_dataset, test_utterances))
-    except ValueError:
-        not_enough_data(dataset, n_splits, train_size_ratio)
+    for train_index, test_index in sss.split(X, intents):
+        train_utterances = utterances[train_index].tolist()
+        train_utterances = get_utterances_subset(train_utterances,
+                                                 train_size_ratio)
+        test_utterances = utterances[test_index].tolist()
+        train_dataset = deepcopy(dataset)
+        train_dataset[INTENTS] = dict()
+        for intent_name, utterance in train_utterances:
+            if intent_name not in train_dataset[INTENTS]:
+                train_dataset[INTENTS][intent_name] = {UTTERANCES: []}
+            train_dataset[INTENTS][intent_name][UTTERANCES].append(
+                deepcopy(utterance))
+        splits.append((train_dataset, test_utterances))
 
     if intents_filter is not None:
         filtered_splits = []
@@ -96,21 +92,6 @@ def create_shuffle_stratified_splits(
             split[1].extend(additional_test_utterances)
 
     return splits
-
-
-def not_enough_data(dataset, n_splits, train_size_ratio,
-                    nb_utterances=None):
-    if nb_utterances is None:
-        nb_utterances = {intent: len(data[UTTERANCES])
-                         for intent, data in iteritems(dataset[INTENTS])}
-    total_utterances = sum(itervalues(nb_utterances))
-    error_msg = "Not enough data: total_utterances={t}, nb_folds={f}, " \
-                "train_size_ratio={r}.".format(t=total_utterances, f=n_splits,
-                                               r=train_size_ratio)
-    error_msg += " Intents details: "
-    error_msg += ", ".join("%s -> %d utterances" % (intent, nb)
-                           for intent, nb in iteritems(nb_utterances))
-    raise NotEnoughDataError(error_msg)
 
 
 def compute_split_metrics(engine_class, split, intent_list,
@@ -141,17 +122,20 @@ def compute_engine_metrics(engine, test_utterances, intent_list,
     intents_idx = {
         intent_name: idx for idx, intent_name in enumerate(intent_list)
     }
-    parse_args = inspect.getargspec(engine.parse).args
-    has_filter_param = "intents_filter" in parse_args
 
     errors = []
     for actual_intent, utterance in test_utterances:
         actual_slots = [chunk for chunk in utterance[DATA] if
                         SLOT_NAME in chunk]
         input_string = input_string_from_chunks(utterance[DATA])
-        if has_filter_param:
+        if has_filter_param(engine):
             parsing = engine.parse(input_string, intents_filter=intents_filter)
         else:
+            if intents_filter:
+                logger.warning("The provided NLU engine (%r) does not support "
+                               "intents filter through its `parse` API, "
+                               "however one has been passed (%s)", engine,
+                               intents_filter)
             parsing = engine.parse(input_string)
 
         if parsing["intent"] is not None:
@@ -190,6 +174,14 @@ def compute_engine_metrics(engine, test_utterances, intent_list,
         metrics = aggregate_metrics(metrics, utterance_metrics,
                                     include_slot_metrics)
     return metrics, errors, confusion_matrix
+
+
+def has_filter_param(engine):
+    if sys.version_info[0] == 2:
+        parse_args = inspect.getargspec(engine.parse).args
+    else:
+        parse_args = inspect.signature(engine.parse).parameters
+    return "intents_filter" in parse_args
 
 
 def compute_utterance_metrics(predicted_intent, predicted_slots, actual_intent,

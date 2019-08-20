@@ -1,6 +1,10 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+## [Unreleased]
+### Fixed
+- Fix issue with intents filter when dataset has not enough data [#118](https://github.com/snipsco/snips-nlu-metrics/pull/118)
+
 ## [0.14.4] - 2019-06-18
 ### Fixed
 - Update dependencies
