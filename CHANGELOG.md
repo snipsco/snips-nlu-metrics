@@ -1,6 +1,10 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+## [Unreleased]
+### Added
+- Use the `batch_parse` method of the engine class when implemented to speedup inference [#120](https://github.com/snipsco/snips-nlu-metrics/pull/120)
+
 ## [0.14.5] - 2019-08-20
 ### Fixed
 - Fix issue with intents filter when dataset has not enough data [#118](https://github.com/snipsco/snips-nlu-metrics/pull/118)
@@ -56,6 +60,7 @@ All notable changes to this project will be documented in this file.
 - Samples
 
 
+[Unreleased]: https://github.com/snipsco/snips-nlu-metrics/compare/0.14.5...HEAD
 [0.14.5]: https://github.com/snipsco/snips-nlu-metrics/compare/0.14.4...0.14.5
 [0.14.4]: https://github.com/snipsco/snips-nlu-metrics/compare/0.14.3...0.14.4
 [0.14.3]: https://github.com/snipsco/snips-nlu-metrics/compare/0.14.2...0.14.3
@@ -63,4 +68,4 @@ All notable changes to this project will be documented in this file.
 [0.14.1]: https://github.com/snipsco/snips-nlu-metrics/compare/0.14.0...0.14.1
 [0.14.0]: https://github.com/snipsco/snips-nlu-metrics/compare/0.13.0...0.14.0
 [0.13.0]: https://github.com/snipsco/snips-nlu-metrics/compare/0.12.0...0.13.0
-[0.12.0]: https://github.com/snipsco/snips-nlu-metrics/compare/0.11.1...0.12.0
+[0.12.0]: https://github.com/snipsco/snips-nlu-metrics/compare/0.11.1...0.12.0@

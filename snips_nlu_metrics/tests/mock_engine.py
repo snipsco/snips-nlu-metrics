@@ -45,6 +45,11 @@ class KeyWordMatchingEngine(Engine):
         return dummy_parsing_result(text, intent)
 
 
+class BatchKeyWordMatchingEngine(KeyWordMatchingEngine):
+    def batch_parse(self, texts, intents_filter=None):
+        return [self.parse(t, intents_filter=intents_filter) for t in texts]
+
+
 class MockEngineSegfault(Engine):
     def __init__(self):
         self.fitted = False

@@ -8,7 +8,8 @@ import unittest
 from snips_nlu_metrics.metrics import (compute_cross_val_metrics,
                                        compute_train_test_metrics)
 from snips_nlu_metrics.tests.mock_engine import (
-    MockEngine, MockEngineSegfault, KeyWordMatchingEngine)
+    MockEngine, MockEngineSegfault, KeyWordMatchingEngine,
+    BatchKeyWordMatchingEngine)
 from snips_nlu_metrics.utils.constants import (
     METRICS, PARSING_ERRORS, CONFUSION_MATRIX, AVERAGE_METRICS)
 
@@ -118,52 +119,52 @@ class TestMetrics(unittest.TestCase):
             dataset = json.load(f)
 
         # When/Then
+        for cls in [KeyWordMatchingEngine, BatchKeyWordMatchingEngine]:
+            res = compute_cross_val_metrics(
+                dataset=dataset, engine_class=cls,
+                nb_folds=2, intents_filter=["intent2", "intent3"],
+                include_slot_metrics=False, seed=42)
 
-        res = compute_cross_val_metrics(
-            dataset=dataset, engine_class=KeyWordMatchingEngine,
-            nb_folds=2, intents_filter=["intent2", "intent3"],
-            include_slot_metrics=False, seed=42)
+            expected_metrics = {
+                "null": {
+                    "intent": {
+                        "true_positive": 0,
+                        "false_positive": 2,
+                        "false_negative": 0,
+                        "precision": 0.0,
+                        "recall": 0.0,
+                        "f1": 0.0
+                    },
+                    "exact_parsings": 0,
+                    "intent_utterances": 0
+                },
+                "intent2": {
+                    "intent": {
+                        "true_positive": 3,
+                        "false_positive": 0,
+                        "false_negative": 1,
+                        "precision": 1.0,
+                        "recall": 3. / 4.,
+                        "f1": 0.8571428571428571
+                    },
+                    "exact_parsings": 3,
+                    "intent_utterances": 4
+                },
+                "intent3": {
+                    "intent": {
+                        "true_positive": 2,
+                        "false_positive": 0,
+                        "false_negative": 1,
+                        "precision": 1.0,
+                        "recall": 2. / 3.,
+                        "f1": 0.8
+                    },
+                    "exact_parsings": 2,
+                    "intent_utterances": 3
+                },
+            }
 
-        expected_metrics = {
-            "null": {
-                "intent": {
-                    "true_positive": 0,
-                    "false_positive": 2,
-                    "false_negative": 0,
-                    "precision": 0.0,
-                    "recall": 0.0,
-                    "f1": 0.0
-                },
-                "exact_parsings": 0,
-                "intent_utterances": 0
-            },
-            "intent2": {
-                "intent": {
-                    "true_positive": 3,
-                    "false_positive": 0,
-                    "false_negative": 1,
-                    "precision": 1.0,
-                    "recall": 3. / 4.,
-                    "f1": 0.8571428571428571
-                },
-                "exact_parsings": 3,
-                "intent_utterances": 4
-            },
-            "intent3": {
-                "intent": {
-                    "true_positive": 2,
-                    "false_positive": 0,
-                    "false_negative": 1,
-                    "precision": 1.0,
-                    "recall": 2. / 3.,
-                    "f1": 0.8
-                },
-                "exact_parsings": 2,
-                "intent_utterances": 3
-            },
-        }
-
-        self.assertDictEqual(expected_metrics, res["metrics"])
+            self.assertDictEqual(expected_metrics, res["metrics"])
 
     def test_compute_cross_val_metrics_with_multiple_workers(self):
         # Given

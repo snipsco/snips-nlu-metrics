@@ -1,8 +1,10 @@
 from __future__ import absolute_import, division, unicode_literals
 
+import functools
 import inspect
 import logging
 import sys
+from builtins import zip
 from copy import deepcopy
 
 import numpy as np
@@ -123,21 +125,26 @@ def compute_engine_metrics(engine, test_utterances, intent_list,
         intent_name: idx for idx, intent_name in enumerate(intent_list)
     }
 
+    accepts_batch = hasattr(engine, "batch_parse")
+    parse_fn = engine.batch_parse if accepts_batch else engine.parse
+    if has_filter_param(parse_fn):
+        parse_fn = functools.partial(parse_fn, intents_filter=intents_filter)
+    else:
+        if intents_filter:
+            logger.warning("The provided NLU engine (%r) does not support "
+                           "intents filter through its `parse` API, "
+                           "however one has been passed (%s)", engine,
+                           intents_filter)
+    batch_parse_fn = parse_fn
+    if not accepts_batch:
+        batch_parse_fn = lambda texts: [parse_fn(t) for t in texts]
+
+    texts = [input_string_from_chunks(u[DATA]) for _, u in test_utterances]
+    results = batch_parse_fn(texts)
     errors = []
-    for actual_intent, utterance in test_utterances:
+    for (actual_intent, utterance), parsing in zip(test_utterances, results):
         actual_slots = [chunk for chunk in utterance[DATA] if
                         SLOT_NAME in chunk]
-        input_string = input_string_from_chunks(utterance[DATA])
-        if has_filter_param(engine):
-            parsing = engine.parse(input_string, intents_filter=intents_filter)
-        else:
-            if intents_filter:
-                logger.warning("The provided NLU engine (%r) does not support "
-                               "intents filter through its `parse` API, "
-                               "however one has been passed (%s)", engine,
-                               intents_filter)
-            parsing = engine.parse(input_string)
-
         if parsing["intent"] is not None:
             predicted_intent = parsing["intent"]["intentName"]
             if predicted_intent is None:
@@ -176,11 +183,11 @@ def compute_engine_metrics(engine, test_utterances, intent_list,
     return metrics, errors, confusion_matrix
 
 
-def has_filter_param(engine):
+def has_filter_param(fn):
     if sys.version_info[0] == 2:
-        parse_args = inspect.getargspec(engine.parse).args
+        parse_args = inspect.getargspec(fn).args
     else:
-        parse_args = inspect.signature(engine.parse).parameters
+        parse_args = inspect.signature(fn).parameters
     return "intents_filter" in parse_args
 
 
