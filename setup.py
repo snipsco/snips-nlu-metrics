@@ -21,9 +21,9 @@ install_requires = [
     "future",
     "numpy>=1.7,<2.0",
     "scipy>=1.0,<2.0",
-    "scikit-learn>=0.21.0,<0.22; python_version>='3.5'",
+    "scikit-learn>=0.21.0,<0.23; python_version>='3.5'",
     "scikit-learn>=0.19,<0.21; python_version<'3.5'",
-    "joblib>=0.13,<0.14"
+    "joblib>=0.13,<0.15"
 ]
 
 extras_require = {
@@ -47,6 +47,7 @@ setup(name=PACKAGE_NAME,
           "Programming Language :: Python :: 3.5",
           "Programming Language :: Python :: 3.6",
           "Programming Language :: Python :: 3.7",
+          "Programming Language :: Python :: 3.8",
       ],
       keywords="metrics nlu nlp intent slots entity parsing",
       extras_require=extras_require,
