@@ -1,9 +1,13 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+## [0.15.0] - 2020-03-10
+### Changed
+- Remove support of Python2.7 [#123](https://github.com/snipsco/snips-nlu-metrics/pull/123)
+
 ## [0.14.6] - 2020-01-14
 ### Added
-- Support for python3.8
+- Support for python3.8 [#121](https://github.com/snipsco/snips-nlu-metrics/pull/121)
 
 ## [0.14.5] - 2019-08-20
 ### Fixed
@@ -60,6 +64,8 @@ All notable changes to this project will be documented in this file.
 - Samples
 
 
+[0.15.0]: https://github.com/snipsco/snips-nlu-metrics/compare/0.14.6...0.15.0
+[0.14.6]: https://github.com/snipsco/snips-nlu-metrics/compare/0.14.5...0.14.6
 [0.14.5]: https://github.com/snipsco/snips-nlu-metrics/compare/0.14.4...0.14.5
 [0.14.4]: https://github.com/snipsco/snips-nlu-metrics/compare/0.14.3...0.14.4
 [0.14.3]: https://github.com/snipsco/snips-nlu-metrics/compare/0.14.2...0.14.3

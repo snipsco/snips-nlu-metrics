@@ -1,16 +1,11 @@
-from __future__ import unicode_literals
-
 from snips_nlu_metrics import Engine
 
 
 def dummy_parsing_result(text, intent_name=None):
     return {
         "input": text,
-        "intent": {
-            "intentName": intent_name,
-            "probability": 0.5
-        },
-        "slots": []
+        "intent": {"intentName": intent_name, "probability": 0.5},
+        "slots": [],
     }
 
 

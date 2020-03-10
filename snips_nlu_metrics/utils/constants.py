@@ -1,5 +1,3 @@
-from __future__ import unicode_literals
-
 INTENT = "intent"
 INTENTS = "intents"
 ENTITIES = "entities"

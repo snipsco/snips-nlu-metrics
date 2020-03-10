@@ -1,13 +1,17 @@
-from __future__ import absolute_import, unicode_literals
-
 from collections import defaultdict
 from copy import deepcopy
 
-from future.utils import iteritems, itervalues
-
 from snips_nlu_metrics.utils.constants import (
-    DATA, ENTITIES, ENTITY, INTENTS, SYNONYMS, TEXT, USE_SYNONYMS, UTTERANCES,
-    VALUE)
+    DATA,
+    ENTITIES,
+    ENTITY,
+    INTENTS,
+    SYNONYMS,
+    TEXT,
+    USE_SYNONYMS,
+    UTTERANCES,
+    VALUE,
+)
 
 
 def input_string_from_chunks(chunks):
@@ -22,10 +26,9 @@ def get_utterances_subset(utterances, ratio):
         utterances_dict[intent_name].append(deepcopy(utterance))
 
     utterances_subset = []
-    for (intent_name, utterances) in iteritems(utterances_dict):
+    for (intent_name, utterances) in utterances_dict.items():
         nb_utterances = int(ratio * len(utterances))
-        utterances_subset += [(intent_name, u)
-                              for u in utterances[:nb_utterances]]
+        utterances_subset += [(intent_name, u) for u in utterances[:nb_utterances]]
     return utterances_subset
 
 
@@ -35,7 +38,7 @@ def is_builtin_entity(entity_name):
 
 def get_declared_entities_values(dataset):
     existing_entities = dict()
-    for entity_name, entity in iteritems(dataset[ENTITIES]):
+    for entity_name, entity in dataset[ENTITIES].items():
         if is_builtin_entity(entity_name):
             continue
         ents = set()
@@ -50,7 +53,7 @@ def get_declared_entities_values(dataset):
 
 def get_intent_utterances_entities_value(dataset):
     existing_entities = defaultdict(set)
-    for intent in itervalues(dataset[INTENTS]):
+    for intent in dataset[INTENTS].values():
         for u in intent[UTTERANCES]:
             for chunk in u[DATA]:
                 if ENTITY not in chunk or is_builtin_entity(chunk[ENTITY]):
@@ -69,10 +72,11 @@ def update_entities_with_utterances(dataset):
     declared_entities = get_declared_entities_values(dataset)
     intent_entities = get_intent_utterances_entities_value(dataset)
 
-    for entity_name, existing_entities in iteritems(declared_entities):
+    for entity_name, existing_entities in declared_entities.items():
         for entity_value in intent_entities.get(entity_name, []):
             if entity_value not in existing_entities:
                 dataset[ENTITIES][entity_name][DATA].append(
-                    make_entity(entity_value, []))
+                    make_entity(entity_value, [])
+                )
 
     return dataset

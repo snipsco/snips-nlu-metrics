@@ -1,30 +1,46 @@
-from __future__ import division, print_function, unicode_literals
-
-import io
 import json
 import logging
+from pathlib import Path
 
-from future.utils import iteritems
 from joblib import Parallel, delayed
-from past.builtins import basestring
 
 from snips_nlu_metrics.utils.constants import (
-    AVERAGE_METRICS, CONFUSION_MATRIX, INTENTS, INTENT_UTTERANCES, METRICS,
-    PARSING_ERRORS, UTTERANCES)
+    AVERAGE_METRICS,
+    CONFUSION_MATRIX,
+    INTENTS,
+    INTENT_UTTERANCES,
+    METRICS,
+    PARSING_ERRORS,
+    UTTERANCES,
+)
 from snips_nlu_metrics.utils.exception import NotEnoughDataError
 from snips_nlu_metrics.utils.metrics_utils import (
-    aggregate_matrices, aggregate_metrics, compute_average_metrics,
-    compute_engine_metrics, compute_precision_recall_f1, compute_split_metrics,
-    create_shuffle_stratified_splits)
+    aggregate_matrices,
+    aggregate_metrics,
+    compute_average_metrics,
+    compute_engine_metrics,
+    compute_precision_recall_f1,
+    compute_split_metrics,
+    create_shuffle_stratified_splits,
+)
 
 logger = logging.getLogger(__name__)
 
 
 def compute_cross_val_metrics(
-        dataset, engine_class, nb_folds=5, train_size_ratio=1.0,
-        drop_entities=False, include_slot_metrics=True,
-        slot_matching_lambda=None, progression_handler=None, num_workers=1,
-        seed=None, out_of_domain_utterances=None, intents_filter=None):
+    dataset,
+    engine_class,
+    nb_folds=5,
+    train_size_ratio=1.0,
+    drop_entities=False,
+    include_slot_metrics=True,
+    slot_matching_lambda=None,
+    progression_handler=None,
+    num_workers=1,
+    seed=None,
+    out_of_domain_utterances=None,
+    intents_filter=None,
+):
     """Compute end-to-end metrics on the dataset using cross validation
 
     Args:
@@ -68,14 +84,20 @@ def compute_cross_val_metrics(
             - "average_metrics": the metrics averaged over all intents    
     """
 
-    if isinstance(dataset, basestring):
-        with io.open(dataset, encoding="utf8") as f:
+    if isinstance(dataset, (str, Path)):
+        with Path(dataset).open(encoding="utf8") as f:
             dataset = json.load(f)
 
     try:
         splits = create_shuffle_stratified_splits(
-            dataset, nb_folds, train_size_ratio, drop_entities,
-            seed, out_of_domain_utterances, intents_filter)
+            dataset,
+            nb_folds,
+            train_size_ratio,
+            drop_entities,
+            seed,
+            out_of_domain_utterances,
+            intents_filter,
+        )
     except NotEnoughDataError as e:
         logger.warning("Not enough data, skipping metrics computation: %r", e)
         return {
@@ -94,8 +116,13 @@ def compute_cross_val_metrics(
     def compute_metrics(split_):
         logger.info("Computing metrics for dataset split ...")
         return compute_split_metrics(
-            engine_class, split_, intent_list, include_slot_metrics,
-            slot_matching_lambda, intents_filter)
+            engine_class,
+            split_,
+            intent_list,
+            include_slot_metrics,
+            slot_matching_lambda,
+            intents_filter,
+        )
 
     effective_num_workers = min(num_workers, len(splits))
     if effective_num_workers > 1:
@@ -107,26 +134,28 @@ def compute_cross_val_metrics(
     for result in enumerate(results):
         split_index, (split_metrics, errors, confusion_matrix) = result
         global_metrics = aggregate_metrics(
-            global_metrics, split_metrics, include_slot_metrics)
+            global_metrics, split_metrics, include_slot_metrics
+        )
         global_confusion_matrix = aggregate_matrices(
-            global_confusion_matrix, confusion_matrix)
+            global_confusion_matrix, confusion_matrix
+        )
         global_errors += errors
-        logger.info("Done computing %d/%d splits"
-                    % (split_index + 1, total_splits))
+        logger.info("Done computing %d/%d splits" % (split_index + 1, total_splits))
 
         if progression_handler is not None:
-            progression_handler(
-                float(split_index + 1) / float(total_splits))
+            progression_handler(float(split_index + 1) / float(total_splits))
 
     global_metrics = compute_precision_recall_f1(global_metrics)
 
     average_metrics = compute_average_metrics(
         global_metrics,
-        ignore_none_intent=True if out_of_domain_utterances is None else False)
+        ignore_none_intent=True if out_of_domain_utterances is None else False,
+    )
 
-    nb_utterances = {intent: len(data[UTTERANCES])
-                     for intent, data in iteritems(dataset[INTENTS])}
-    for intent, metrics in iteritems(global_metrics):
+    nb_utterances = {
+        intent: len(data[UTTERANCES]) for intent, data in dataset[INTENTS].items()
+    }
+    for intent, metrics in global_metrics.items():
         metrics[INTENT_UTTERANCES] = nb_utterances.get(intent, 0)
 
     return {
@@ -138,8 +167,13 @@ def compute_cross_val_metrics(
 
 
 def compute_train_test_metrics(
-        train_dataset, test_dataset, engine_class, include_slot_metrics=True,
-        slot_matching_lambda=None, intents_filter=None):
+    train_dataset,
+    test_dataset,
+    engine_class,
+    include_slot_metrics=True,
+    slot_matching_lambda=None,
+    intents_filter=None,
+):
     """Compute end-to-end metrics on `test_dataset` after having trained on
     `train_dataset`
 
@@ -171,12 +205,12 @@ def compute_train_test_metrics(
             - "average_metrics": the metrics averaged over all intents
     """
 
-    if isinstance(train_dataset, basestring):
-        with io.open(train_dataset, encoding="utf8") as f:
+    if isinstance(train_dataset, (str, Path)):
+        with Path(train_dataset).open(encoding="utf8") as f:
             train_dataset = json.load(f)
 
-    if isinstance(test_dataset, basestring):
-        with io.open(test_dataset, encoding="utf8") as f:
+    if isinstance(test_dataset, (str, Path)):
+        with Path(test_dataset).open(encoding="utf8") as f:
             test_dataset = json.load(f)
 
     intent_list = set(train_dataset["intents"])
@@ -188,20 +222,26 @@ def compute_train_test_metrics(
     engine.fit(train_dataset)
     test_utterances = [
         (intent_name, utterance)
-        for intent_name, intent_data in iteritems(test_dataset[INTENTS])
+        for intent_name, intent_data in test_dataset[INTENTS].items()
         for utterance in intent_data[UTTERANCES]
         if intents_filter is None or intent_name in intents_filter
     ]
 
     logger.info("Computing metrics...")
     metrics, errors, confusion_matrix = compute_engine_metrics(
-        engine, test_utterances, intent_list, include_slot_metrics,
-        slot_matching_lambda, intents_filter)
+        engine,
+        test_utterances,
+        intent_list,
+        include_slot_metrics,
+        slot_matching_lambda,
+        intents_filter,
+    )
     metrics = compute_precision_recall_f1(metrics)
     average_metrics = compute_average_metrics(metrics)
-    nb_utterances = {intent: len(data[UTTERANCES])
-                     for intent, data in iteritems(train_dataset[INTENTS])}
-    for intent, intent_metrics in iteritems(metrics):
+    nb_utterances = {
+        intent: len(data[UTTERANCES]) for intent, data in train_dataset[INTENTS].items()
+    }
+    for intent, intent_metrics in metrics.items():
         intent_metrics[INTENT_UTTERANCES] = nb_utterances.get(intent, 0)
     return {
         CONFUSION_MATRIX: confusion_matrix,

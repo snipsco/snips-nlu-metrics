@@ -56,9 +56,7 @@ the ``Engine`` API:
 
 .. code-block:: python
 
-    from builtins import object
-
-    class Engine(object):
+    class Engine:
         def fit(self, dataset):
             # Perform training ...
             return self
@@ -117,7 +115,7 @@ You can also compute metrics on a custom NLU engine, here is a simple example:
 
     from snips_nlu_metrics import compute_train_test_metrics
 
-    class MyNLUEngine(object):
+    class MyNLUEngine:
         def fit(self, dataset):
             self.intent_list = list(dataset["intents"])
             return self
